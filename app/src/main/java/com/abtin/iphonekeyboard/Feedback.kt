@@ -46,10 +46,13 @@ class Feedback(context: Context, private val prefs: Prefs) {
             val i = ids.indexOf(sampleId)
             if (i >= 0 && status == 0) loaded[i] = true
         }
+        // Sound is a nicety: never let it take the keyboard down.
         ClickSound.values().forEach { s ->
-            val f = File(app.cacheDir, "click_${s.name.lowercase()}_v1.wav")
-            if (!f.exists() || f.length() == 0L) f.writeBytes(wav(synth(s)))
-            ids[s.ordinal] = pool.load(f.absolutePath, 1)
+            runCatching {
+                val f = File(app.cacheDir, "click_${s.name.lowercase()}_v2.wav")
+                if (!f.exists() || f.length() <= 44L) f.writeBytes(wav(synth(s)))
+                ids[s.ordinal] = pool.load(f.absolutePath, 1)
+            }
         }
     }
 
@@ -87,8 +90,6 @@ class Feedback(context: Context, private val prefs: Prefs) {
 
     // ---- synthesis -------------------------------------------------------------------------
 
-    private val rate = 44100
-
     private fun synth(s: ClickSound): ShortArray {
         // (tone Hz, body Hz, noise amount, length ms)
         val (tone, body, noiseAmt, lenMs) = when (s) {
@@ -115,8 +116,12 @@ class Feedback(context: Context, private val prefs: Prefs) {
             val thump = 0.35 * sin(2 * PI * body * t) * exp(-t / 0.0095)
             out[i] = attack * (noise + ring + thump)
         }
-        val peak = out.maxOf { kotlin.math.abs(it) }.takeIf { it > 0 } ?: 1.0
+        val peak = out.maxOfOrNull { kotlin.math.abs(it) }?.takeIf { it > 0 } ?: 1.0
         return ShortArray(n) { (out[it] / peak * 0.9 * Short.MAX_VALUE).toInt().toShort() }
+    }
+
+    private companion object {
+        const val rate = 44100
     }
 
     private data class Quad(val tone: Double, val body: Double, val noise: Double, val ms: Int)
