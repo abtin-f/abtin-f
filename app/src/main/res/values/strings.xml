@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">کیبورد آیفون</string>
+    <string name="ime_name">کیبورد آیفون (فارسی/English)</string>
+    <string name="subtype_fa">فارسی</string>
+    <string name="subtype_en">English</string>
+</resources>

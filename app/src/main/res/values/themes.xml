@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:colorAccent">@color/ios_green</item>
+        <item name="android:colorPrimary">@color/ios_blue</item>
+        <item name="android:statusBarColor">#F2F2F7</item>
+        <item name="android:navigationBarColor">#F2F2F7</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#F2F2F7</item>
+    </style>
+</resources>
