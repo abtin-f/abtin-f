@@ -38,6 +38,21 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { test ->
+                test.systemProperty("robolectric.graphicsMode", "NATIVE")
+                test.systemProperty("screensDir", rootProject.file("out/screens").absolutePath)
+                test.testLogging {
+                    events("failed", "passed")
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                    showStandardStreams = true
+                }
+            }
+        }
+    }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -53,4 +68,9 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
     }
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }
