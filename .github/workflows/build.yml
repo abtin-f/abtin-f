@@ -33,10 +33,11 @@ jobs:
           name: iPhoneKeyboard-apk
           path: out/iPhoneKeyboard.apk
 
-      - name: Publish release (main branch)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Publish release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: کیبورد آیفون v1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
           files: out/iPhoneKeyboard.apk
