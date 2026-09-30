@@ -22,4 +22,4 @@ everything else stays flat and artwork-first.
 `ui/` (`MusicViewModel`, `AppRoot`, screens) · `ui/components/` (AlbumCard, FeaturedCard, SongRow, MiniPlayer, BottomNavigation, DynamicAlbumBackground…) · `ui/theme/` (colors, type, line icons)
 
 ## Build
-Android Studio (Koala+) or `./gradlew assembleDebug`. minSdk 26 (blur from Android 12, refraction from Android 13), compileSdk 36.
+Android Studio (Koala+) or `./gradlew assembleDebug`. minSdk 31 (Android 12+: blur; Android 13+: lens refraction), compileSdk 36.
