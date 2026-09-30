@@ -39,6 +39,8 @@ data class PlayerState(
     /** SystemClock.elapsedRealtime() at which playback pauses (sleep timer); 0 = off. */
     val sleepEndsAt: Long = 0L,
     val sleepAtTrackEnd: Boolean = false,
+    /** True once the user has started playback; the mini-player stays hidden until then. */
+    val started: Boolean = false,
 ) {
     val current: Track? get() = queue.getOrNull(index)
     val durationMs: Long get() = current?.durationMs ?: 0L
@@ -159,7 +161,7 @@ class PlayerController(
             if (simPos >= t.durationMs) simPos = 0
             lastTick = SystemClock.elapsedRealtime()
         }
-        _state.update { it.copy(isPlaying = true) }
+        _state.update { it.copy(isPlaying = true, started = true) }
         record(t)
     }
 
@@ -307,7 +309,7 @@ class PlayerController(
             exo.stop()
             exo.clearMediaItems()
         }
-        _state.update { it.copy(isPlaying = autoPlay, positionMs = 0) }
+        _state.update { it.copy(isPlaying = autoPlay, positionMs = 0, started = it.started || autoPlay) }
         if (autoPlay) {
             ensureService()
             record(t)

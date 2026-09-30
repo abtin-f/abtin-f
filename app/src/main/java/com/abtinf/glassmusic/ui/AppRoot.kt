@@ -6,8 +6,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -106,7 +110,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     // 0 = mini-player, 1 = full-screen Now Playing
     val expand = remember { Animatable(0f) }
     val expanded by remember { androidx.compose.runtime.derivedStateOf { expand.value > 0.001f } }
-    BackHandler(enabled = expanded) { scope.launch { expand.animateTo(0f, tween(340)) } }
+    BackHandler(enabled = expanded) { scope.launch { expand.animateTo(0f, tween(300, easing = FastOutSlowInEasing)) } }
 
     val lightBars = false
     SideEffect {
@@ -117,7 +121,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     }
 
     fun settle(toExpanded: Boolean) {
-        scope.launch { expand.animateTo(if (toExpanded) 1f else 0f, tween(360)) }
+        scope.launch { expand.animateTo(if (toExpanded) 1f else 0f, tween(300, easing = FastOutSlowInEasing)) }
     }
 
     fun goTab(t: Tab) {
@@ -165,16 +169,16 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             }
         }
 
-        val fade = tween<Float>(220)
+        val fade = tween<Float>(240)
         Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         NavHost(
             navController = nav,
             startDestination = Tab.Home.route,
             modifier = Modifier.fillMaxSize(),
             enterTransition = { fadeIn(fade) },
-            exitTransition = { fadeOut(tween(160)) },
+            exitTransition = { fadeOut(tween(140)) },
             popEnterTransition = { fadeIn(fade) },
-            popExitTransition = { fadeOut(tween(160)) },
+            popExitTransition = { fadeOut(tween(140)) },
         ) {
             composable(Tab.Home.route) {
                 HomeScreen(vm, bottomPad, requestPermission, ::openAlbum, ::openArtist, ::openPlaylist, ::openMetadata, ::openList)
@@ -190,8 +194,6 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             }
             composable(
                 "list/{kind}", arguments = listOf(navArgument("kind") { type = NavType.StringType }),
-                enterTransition = { slideInHorizontally(tween(300)) { it / 4 } + fadeIn(fade) },
-                popExitTransition = { slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)) },
             ) { entry ->
                 LibraryListScreen(
                     kind = entry.arguments?.getString("kind").orEmpty(), vm = vm, bottomPad = bottomPad,
@@ -202,8 +204,6 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             composable(
                 "detail/{kind}/{id}",
                 arguments = listOf(navArgument("kind") { type = NavType.StringType }, navArgument("id") { type = NavType.StringType }),
-                enterTransition = { slideInHorizontally(tween(300)) { it / 4 } + fadeIn(fade) },
-                popExitTransition = { slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)) },
             ) { entry ->
                 DetailScreen(
                     kind = entry.arguments?.getString("kind").orEmpty(),
@@ -214,8 +214,6 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             }
             composable(
                 "meta/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType }),
-                enterTransition = { slideInHorizontally(tween(300)) { it / 4 } + fadeIn(fade) },
-                popExitTransition = { slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)) },
             ) { entry ->
                 MetadataScreen(entry.arguments?.getLong("id") ?: 0L, vm, bottomPad, onBack = { nav.popBackStack() })
             }
@@ -247,13 +245,19 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                     .navigationBarsPadding(),
             ) {
                 val current = ps.current
-                if (current != null) {
-                    MiniPlayer(
-                        track = current, isPlaying = ps.isPlaying,
-                        onToggle = vm::togglePlay, onNext = vm::next, onExpand = { settle(true) },
-                        modifier = miniDragModifier.graphicsLayer { alpha = (1f - expand.value * 3f).coerceIn(0f, 1f) },
-                    )
-                    Spacer(Modifier.height(8.dp))
+                AnimatedVisibility(
+                    visible = current != null && ps.started,
+                    enter = slideInVertically(spring(dampingRatio = 0.8f, stiffness = 420f)) { it / 2 } + fadeIn(tween(220)) + expandVertically(spring(0.85f, 420f)),
+                    exit = fadeOut(tween(160)) + shrinkVertically(),
+                ) {
+                    Column {
+                        if (current != null) MiniPlayer(
+                            track = current, isPlaying = ps.isPlaying,
+                            onToggle = vm::togglePlay, onNext = vm::next, onExpand = { settle(true) },
+                            modifier = miniDragModifier.graphicsLayer { alpha = (1f - expand.value * 3f).coerceIn(0f, 1f) },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
                 AppTabBar(tab, ::goTab, backdrop)
             }
@@ -266,7 +270,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                     .fillMaxSize()
                     .graphicsLayer {
                         translationY = (1f - expand.value) * heightPx
-                        shape = RoundedCornerShape((28f * (1f - expand.value)).dp)
+                        shape = RoundedCornerShape(0.dp)
                         clip = true
                     },
             ) {
