@@ -5,6 +5,10 @@ PKG=com.abtinf.glassmusic
 mkdir -p out
 # Let the freshly booted emulator settle (system apps hog the CPU for the first ~30s and cause bogus ANRs).
 sleep 40
+# Suppress system ANR/crash dialogs (e.g. "Pixel Launcher isn't responding") that would cover the app.
+adb shell settings put global hide_error_dialogs 1
+adb shell settings put global window_animation_scale 1
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null
 adb install -r "$APK" 2>&1 | tee out/install.txt
 adb shell pm grant $PKG android.permission.READ_MEDIA_AUDIO || true
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
@@ -15,7 +19,7 @@ shot() { n=$((n+1)); name=$(printf "%02d_%s" $n "$1"); adb exec-out screencap -p
   if adb shell pidof $PKG > /dev/null; then echo "$name ALIVE" >> out/steps.txt; else echo "$name DEAD" >> out/steps.txt; fi; }
 tap() { python3 ci/tap.py "$1" ${2:-0} | tee -a out/taps.txt; sleep ${3:-2}; }
 back() { adb shell input keyevent 4; sleep 1.5; }
-fresh() { adb shell am force-stop $PKG; sleep 1; adb shell am start -n $PKG/.MainActivity > /dev/null; sleep 9; }
+fresh() { adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null; adb shell am force-stop $PKG; sleep 1; adb shell am start -n $PKG/.MainActivity > /dev/null; sleep 9; }
 
 # --- A: navigation -------------------------------------------------------------------------
 fresh
