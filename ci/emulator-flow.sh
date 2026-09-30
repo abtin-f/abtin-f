@@ -51,14 +51,14 @@ tap "Play" 0 3; shot metadata_playing
 back; sleep 1
 adb shell input tap 400 2040; sleep 3; shot player_expanded
 sleep 3; shot player_playing
-tap "More"; sleep 1.5; shot player_menu
-tap "Details"; sleep 2; shot player_details
-tap "Done"; sleep 1.5
-tap "More"; sleep 1.5; tap "Sleep timer"; sleep 1.5; shot sleep_timer; back
-tap "Lyrics"; sleep 2; shot lyrics
-tap "Queue"; sleep 2; shot queue
-tap "Output"; sleep 2; shot output
-tap "Done"; sleep 1.5
+# uiautomator cannot dump while the player animates, so use fixed coordinates (1080x2400 screen)
+adb shell input tap 959 1285; sleep 2; shot player_menu
+back; sleep 1.5
+adb shell input tap 184 2246; sleep 2.5; shot lyrics
+adb shell input tap 897 2246; sleep 2.5; shot queue
+adb shell input tap 184 2246; sleep 1.5
+adb shell input tap 540 2246; sleep 2.5; shot output
+back; sleep 1.5
 adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed
 
 adb logcat -d -b crash > out/crash.txt
