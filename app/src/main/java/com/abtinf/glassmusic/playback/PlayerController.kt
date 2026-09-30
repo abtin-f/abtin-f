@@ -34,6 +34,11 @@ data class PlayerState(
     val autoMix: Boolean = true,
     val isMixing: Boolean = false,
     val singMode: Boolean = false,
+    /** When the queue runs out, keep playing shuffled songs from the library. */
+    val endless: Boolean = false,
+    /** SystemClock.elapsedRealtime() at which playback pauses (sleep timer); 0 = off. */
+    val sleepEndsAt: Long = 0L,
+    val sleepAtTrackEnd: Boolean = false,
 ) {
     val current: Track? get() = queue.getOrNull(index)
     val durationMs: Long get() = current?.durationMs ?: 0L
@@ -250,6 +255,15 @@ class PlayerController(
 
     fun setAutoMix(enabled: Boolean) = _state.update { it.copy(autoMix = enabled, isMixing = if (enabled) it.isMixing else false) }
 
+    fun toggleEndless() = _state.update { it.copy(endless = !it.endless) }
+
+    /** [minutes] <= 0 turns the timer off. */
+    fun setSleepTimer(minutes: Int) = _state.update {
+        it.copy(sleepEndsAt = if (minutes > 0) SystemClock.elapsedRealtime() + minutes * 60_000L else 0L, sleepAtTrackEnd = false)
+    }
+
+    fun sleepAtEndOfTrack() = _state.update { it.copy(sleepAtTrackEnd = true, sleepEndsAt = 0L) }
+
     fun toggleSingMode() = _state.update { it.copy(singMode = !it.singMode) }
 
     // ---- internals --------------------------------------------------------------------------
@@ -257,13 +271,18 @@ class PlayerController(
     private fun currentIsReal() = _state.value.current?.uri != null
 
     private fun nextIndex(): Int {
-        val s = _state.value
+        var s = _state.value
+        if (s.index >= s.queue.lastIndex && s.endless && originalQueue.isNotEmpty()) {
+            val more = originalQueue.shuffled().filter { it.id != s.current?.id }
+            _state.update { it.copy(queue = it.queue + more) }
+            s = _state.value
+        }
         return if (s.index < s.queue.lastIndex) s.index + 1 else 0
     }
 
     private fun hasNext(): Boolean {
         val s = _state.value
-        return s.queue.size > 1 && (s.index < s.queue.lastIndex || s.repeat == RepeatMode.ALL)
+        return s.queue.size > 1 && (s.index < s.queue.lastIndex || s.repeat == RepeatMode.ALL || s.endless)
     }
 
     private fun goTo(index: Int, autoPlay: Boolean, mixed: Boolean = false) {
@@ -304,6 +323,11 @@ class PlayerController(
 
     private fun onEnded() {
         val s = _state.value
+        if (s.sleepAtTrackEnd && s.repeat != RepeatMode.ONE) {
+            _state.update { it.copy(sleepAtTrackEnd = false) }
+            if (hasNext()) goTo(nextIndex(), autoPlay = false) else goTo(0, autoPlay = false)
+            return
+        }
         when {
             s.repeat == RepeatMode.ONE -> { seekTo(0); play() }
             hasNext() -> goTo(nextIndex(), autoPlay = true, mixed = mixedIn && s.autoMix)
@@ -316,6 +340,11 @@ class PlayerController(
 
     private fun tick() {
         val s = _state.value
+        if (s.sleepEndsAt != 0L && SystemClock.elapsedRealtime() >= s.sleepEndsAt) {
+            _state.update { it.copy(sleepEndsAt = 0L) }
+            pause()
+            return
+        }
         val t = s.current ?: return
         val now = SystemClock.elapsedRealtime()
         val real = t.uri != null
@@ -329,7 +358,7 @@ class PlayerController(
         if (!real && pos >= t.durationMs && s.isPlaying) { onEnded(); return }
 
         val remaining = t.durationMs - pos
-        val fadeOut = s.autoMix && s.isPlaying && hasNext() && t.durationMs > 20_000 && remaining <= MIX_MS
+        val fadeOut = s.autoMix && !s.sleepAtTrackEnd && s.isPlaying && hasNext() && t.durationMs > 20_000 && remaining <= MIX_MS
         val fadeIn = s.autoMix && s.isPlaying && mixedIn && pos < FADE_IN_MS
         val factor = when {
             fadeOut -> 0.3f + 0.7f * (remaining / MIX_MS.toFloat()).coerceIn(0f, 1f)

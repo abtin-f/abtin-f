@@ -130,5 +130,14 @@ object AmIcons {
     val AddToQueue = icon("addQueue", P("M4 6h14M4 11h14M4 16h8"), P("M17 15v6M14 18h6"))
     val Edit = icon("edit", P("M4 20h4L19 9l-4-4L4 16z"), P("M13.5 6.5l4 4"))
     val Shuffle2 = Shuffle
+    val Share = icon("share", P("M12 15V4M8 8l4-4 4 4"), P("M7 11H6a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-1"))
+    val Info = icon("info", P(circ(12f, 12f, 9f)), P("M12 11v5.5"), P("M12 7.6h.01"))
+    val Moon = icon("moon", P("M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"), P("M17 3.5v3M15.5 5h3"))
+    val Device = icon("device", P(rr(6f, 3f, 12f, 18f, 3f)), P(circ(12f, 14.5f, 3.2f)), P("M12 6.6h.01"))
+    val PlaylistAdd = icon("playlistAdd", P("M4 7h11M4 12h11M4 17h6"), P("M17 13.5v6M14 16.5h6"))
+    val AlbumTile = icon("albumTile", P(rr(7f, 3f, 10f, 18f, 2.5f)), P("M10.5 17.5h3"))
+    val Infinity = icon("infinity", P("M12 12c-2-2.5-3.5-4-5.5-4a4 4 0 0 0 0 8c2 0 3.5-1.5 5.5-4zm0 0c2 2.5 3.5 4 5.5 4a4 4 0 0 0 0-8c-2 0-3.5 1.5-5.5 4z"))
+    val Mix = icon("mix", P("M12 20v-9"), P("M12 11L7 6M12 11l5-5"), P("M7 6v3.5M7 6h3.5M17 6v3.5M17 6h-3.5"))
+    val Waveform = icon("waveform", P("M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"), stroke = 1.6f)
     val Filter = icon("filter", P("M4 7h16M7 12h10M10 17h4"))
 }

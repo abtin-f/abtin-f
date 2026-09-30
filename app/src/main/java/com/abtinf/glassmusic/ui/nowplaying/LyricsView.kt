@@ -93,20 +93,20 @@ fun LyricsView(
     ) {
         itemsIndexed(lines, key = { i, l -> "$i-${l.timeMs}" }) { i, line ->
             val isCurrent = i == current
-            val a by animateFloatAsState(if (isCurrent) 1f else 0.38f, tween(400), label = "lyricAlpha")
-            val blur by animateDpAsState(if (isCurrent) 0.dp else 1.5.dp, tween(400), label = "lyricBlur")
+            val a by animateFloatAsState(if (isCurrent) 1f else 0.55f, tween(400), label = "lyricAlpha")
+            val blur by animateDpAsState(0.dp, tween(400), label = "lyricBlur")
             Column(
                 Modifier
                     .fillMaxWidth()
                     .clickable { onSeek(line.timeMs) }
-                    .padding(vertical = 10.dp)
+                    .padding(vertical = 7.dp)
                     .alpha(a)
                     .blur(blur, BlurredEdgeTreatment.Unbounded),
             ) {
-                Text(line.text, style = AmType.Lyric.copy(fontSize = 28.sp, lineHeight = 34.sp), color = Color.White)
+                Text(line.text, style = AmType.Lyric.copy(fontSize = 19.sp, lineHeight = 26.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 if (line.translation != null && showTranslation) {
                     Spacer(Modifier.height(4.dp))
-                    Text(line.translation, style = AmType.Body.copy(fontSize = 16.sp), color = Color.White.copy(alpha = 0.7f))
+                    Text(line.translation, style = AmType.Body.copy(fontSize = 14.sp), color = Color.White.copy(alpha = 0.7f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

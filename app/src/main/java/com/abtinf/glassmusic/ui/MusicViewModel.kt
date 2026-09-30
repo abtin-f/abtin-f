@@ -164,6 +164,9 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleShuffle() = controller.toggleShuffle()
     fun cycleRepeat() = controller.cycleRepeat()
     fun toggleSing() = controller.toggleSingMode()
+    fun toggleEndless() = controller.toggleEndless()
+    fun setSleepTimer(minutes: Int) = controller.setSleepTimer(minutes)
+    fun sleepAtEndOfTrack() = controller.sleepAtEndOfTrack()
     fun setAutoMix(on: Boolean) { controller.setAutoMix(on); store.setAutoMix(on) }
     fun toggleFavorite(t: Track) = store.toggleFavorite(t.id)
 
