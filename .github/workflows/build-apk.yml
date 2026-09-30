@@ -35,6 +35,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: GlassMusic-debug-apk
@@ -57,3 +58,10 @@ jobs:
         with:
           name: emulator-output
           path: out
+      - name: Publish screenshots to branch ci-screenshots
+        if: always()
+        run: |
+          mkdir -p shots && cp out/* shots/ 2>/dev/null || true
+          cd shots && git init -q && git checkout -q -b ci-screenshots && git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "screenshots for $GITHUB_SHA" || exit 0
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-screenshots
