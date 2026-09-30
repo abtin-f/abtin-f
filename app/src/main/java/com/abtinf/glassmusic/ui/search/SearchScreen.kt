@@ -71,6 +71,8 @@ fun SearchScreen(
     val results by vm.searchResults.collectAsState()
     val player by vm.playback.collectAsState()
     val focus = LocalFocusManager.current
+    val library by vm.library.collectAsState()
+    val playlists by vm.playlists.collectAsState()
 
     LazyColumn(Modifier.fillMaxSize().background(am.background), contentPadding = PaddingValues(bottom = bottomPad)) {
         item {
@@ -105,8 +107,6 @@ fun SearchScreen(
         }
         if (query.isBlank()) {
             item { SectionHeader("Browse Your Library", Modifier.padding(top = 16.dp)) }
-            val library by vm.library.collectAsState()
-            val playlists by vm.playlists.collectAsState()
             val songs = library.recentlyAddedTracks
             val tiles = listOf(
                 BrowseTileData("songs", "Songs", Color(0xFFFA2D48), songs.take(3), false),
