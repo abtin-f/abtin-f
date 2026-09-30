@@ -9,30 +9,43 @@ adb install -r "$APK" 2>&1 | tee out/install.txt
 adb shell pm grant $PKG android.permission.READ_MEDIA_AUDIO || true
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 adb logcat -c
-adb shell am start -n $PKG/.MainActivity
-sleep 12
 
 n=0
 shot() { n=$((n+1)); name=$(printf "%02d_%s" $n "$1"); adb exec-out screencap -p > out/$name.png
   if adb shell pidof $PKG > /dev/null; then echo "$name ALIVE" >> out/steps.txt; else echo "$name DEAD" >> out/steps.txt; fi; }
 tap() { python3 ci/tap.py "$1" ${2:-0} | tee -a out/taps.txt; sleep ${3:-2}; }
 back() { adb shell input keyevent 4; sleep 1.5; }
+fresh() { adb shell am force-stop $PKG; sleep 1; adb shell am start -n $PKG/.MainActivity > /dev/null; sleep 9; }
 
+# --- A: navigation -------------------------------------------------------------------------
+fresh
 shot home
 tap "Tame Impala"; shot artist_detail; back
 tap "Library"; shot library
 tap "Playlists"; shot playlists; back
 tap "Artists"; shot artists; back
 tap "Albums"; shot albums; back
-tap "Songs"; shot songs
+tap "Repo"; shot repo
+tap "Search"; shot search
+adb shell input tap 540 420; sleep 1; adb shell input text tame; sleep 2; shot search_results
+tap "Library" 0 0.25; shot tab_lens_midtap
+sleep 2; tap "Home"; shot home_again
+
+# --- B: songs list, filters, playlist editor -------------------------------------------------
+fresh
+tap "Library"; tap "Songs"; shot songs
 adb shell dumpsys gfxinfo $PKG reset > /dev/null
 for i in 1 2 3; do adb shell input swipe 540 1700 540 700 250; sleep 0.6; done
 adb shell dumpsys gfxinfo $PKG > out/gfxinfo_scroll.txt
 shot songs_scrolled
-adb shell input swipe 540 700 540 1800 200; sleep 1
+fresh
+tap "Library"; tap "Songs"
 tap "Filters"; shot filters_menu; back
-tap "Create playlist"; sleep 2; shot playlist_editor
-tap "Close"; sleep 1
+tap "Create playlist" 0 3; shot playlist_editor
+
+# --- C: metadata + player -----------------------------------------------------------------
+fresh
+tap "Library"; tap "Songs"
 tap "Bad Decisions"; shot metadata
 tap "Play" 0 3; shot metadata_playing
 back; sleep 1
@@ -47,12 +60,6 @@ tap "Queue"; sleep 2; shot queue
 tap "Output"; sleep 2; shot output
 tap "Done"; sleep 1.5
 adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed
-tap "Repo"; shot repo
-tap "Search"; shot search
-adb shell input tap 540 420; sleep 1; adb shell input text tame; sleep 2; shot search_results
-tap "Library" 0 0.25; shot tab_lens_midtap
-sleep 2
-tap "Home"; shot home_again
 
 adb logcat -d -b crash > out/crash.txt
 adb logcat -d -s AndroidRuntime:E ActivityManager:I > out/runtime.txt
