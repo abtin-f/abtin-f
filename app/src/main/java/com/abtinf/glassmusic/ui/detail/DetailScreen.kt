@@ -88,9 +88,11 @@ fun DetailScreen(
     val album = if (kind == "album") library.albumById[id.toLongOrNull()] else null
     val artist = if (kind == "artist") library.artistById[id.toLongOrNull()] else null
 
-    val tracks: List<Track> = album?.tracks ?: artist?.tracks ?: playlist?.let { vm.resolve(it) } ?: emptyList()
-    val title = album?.title ?: artist?.name ?: playlist?.name ?: ""
-    val subtitle = album?.artist ?: if (playlist != null) "Playlist" else if (artist != null) "Artist" else ""
+    val folder = if (kind == "folder") library.folderById[id.toLongOrNull()] else null
+
+    val tracks: List<Track> = album?.tracks ?: artist?.tracks ?: folder?.tracks ?: playlist?.let { vm.resolve(it) } ?: emptyList()
+    val title = album?.title ?: artist?.name ?: folder?.name ?: playlist?.name ?: ""
+    val subtitle = album?.artist ?: folder?.path?.trimEnd('/') ?: if (playlist != null) "Playlist" else if (artist != null) "Artist" else ""
     val minutes = (tracks.sumOf { it.durationMs } / 60_000).toInt().coerceAtLeast(1)
     val formats = tracks.map { it.format }.distinct()
     val meta = "${tracks.size} downloaded  •  $minutes min" +

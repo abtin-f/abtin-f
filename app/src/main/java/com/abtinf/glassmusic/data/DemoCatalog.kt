@@ -22,6 +22,7 @@ object DemoCatalog {
             bitrateKbps = if (flac) 700 + (n * 37) % 330 else 256 + (n * 13) % 96,
             sizeBytes = seconds * (if (flac) 110_000L else 40_000L),
             year = 2015 + n % 10, trackNo = 1 + n % 9, albumArtist = artist,
+            folder = "Music/Demo/$album/",
         )
     }
 

@@ -21,6 +21,10 @@ data class Track(
     val trackNo: Int = 0,
     val discNo: Int = 1,
     val albumArtist: String = "",
+    /** Folder relative to storage root, e.g. "Music/Persian/". */
+    val folder: String = "",
+    /** Absolute file path when known (used to find sidecar .lrc files). */
+    val path: String? = null,
 ) {
     val albumId: Long get() = albumIdOf(album, artist)
     val artistId: Long get() = artistIdOf(artist)
@@ -39,6 +43,12 @@ data class Artist(val id: Long, val name: String, val tracks: List<Track>) {
     val cover: Track get() = tracks.first()
 }
 
+data class Folder(val path: String, val tracks: List<Track>) {
+    val id: Long get() = path.lowercase().hashCode().toLong()
+    val name: String get() = path.trimEnd('/').substringAfterLast('/').ifBlank { "Storage" }
+    val parent: String get() = path.trimEnd('/').substringBeforeLast('/', "")
+}
+
 data class Playlist(
     val id: String,
     val name: String,
@@ -50,6 +60,7 @@ data class Library(
     val tracks: List<Track> = emptyList(),
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),
+    val folders: List<Folder> = emptyList(),
     val isDemo: Boolean = false,
     val hasPermission: Boolean = false,
     val loaded: Boolean = false,
@@ -57,6 +68,7 @@ data class Library(
     val trackById: Map<Long, Track> by lazy { tracks.associateBy { it.id } }
     val albumById: Map<Long, Album> by lazy { albums.associateBy { it.id } }
     val artistById: Map<Long, Artist> by lazy { artists.associateBy { it.id } }
+    val folderById: Map<Long, Folder> by lazy { folders.associateBy { it.id } }
     val recentlyAddedTracks: List<Track> by lazy { tracks.sortedByDescending { it.dateAdded } }
     val recentlyAddedAlbums: List<Album> by lazy { albums.sortedByDescending { it.dateAdded } }
 
@@ -68,7 +80,10 @@ data class Library(
             val artists = tracks.groupBy { it.artistId }.map { (id, list) ->
                 Artist(id, list.first().artist, list.sortedBy { it.title })
             }.sortedBy { it.name.lowercase() }
-            return Library(tracks, albums, artists, isDemo, hasPermission, loaded = true)
+            val folders = tracks.groupBy { it.folder }.map { (path, list) ->
+                Folder(path, list.sortedWith(compareBy({ it.discNo }, { it.trackNo }, { it.title.lowercase() })))
+            }.sortedBy { it.path.lowercase() }
+            return Library(tracks, albums, artists, folders, isDemo, hasPermission, loaded = true)
         }
     }
 }

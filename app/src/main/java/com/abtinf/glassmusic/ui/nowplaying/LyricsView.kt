@@ -57,7 +57,19 @@ fun LyricsView(
         Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
             Text("No lyrics for this song", style = AmType.Title, color = Color.White.copy(alpha = 0.85f))
             Spacer(Modifier.height(4.dp))
-            Text("Import a .lrc file to see synced lyrics.", style = AmType.Caption, color = Color.White.copy(alpha = 0.6f))
+            Text("Lyrics are read from the song's tags or a .lrc file next to it.", style = AmType.Caption, color = Color.White.copy(alpha = 0.6f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 32.dp))
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            if (android.os.Build.VERSION.SDK_INT >= 30 && !android.os.Environment.isExternalStorageManager()) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "Allow access to .lrc files", style = AmType.Body, color = Color.White,
+                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.18f)).clickable {
+                        runCatching {
+                            ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, android.net.Uri.parse("package:${ctx.packageName}")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    }.padding(horizontal = 20.dp, vertical = 10.dp),
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Text(
                 "Import lyrics", style = AmType.Body, color = Color.White,

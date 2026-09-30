@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -75,14 +76,16 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     val favorites = store.favorites
     val playlists = store.playlists
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentLyrics: StateFlow<List<LyricLine>> = combine(
         controller.state.map { it.current }.distinctUntilChanged(),
         store.lyrics,
-    ) { track, overrides ->
+    ) { track, overrides -> track to overrides }.mapLatest { (track, overrides) ->
         when {
             track == null -> emptyList()
             track.lyrics.isNotEmpty() -> track.lyrics
-            else -> overrides[track.id]?.let { LrcParser.parse(it, track.durationMs) } ?: emptyList()
+            else -> overrides[track.id]?.let { LrcParser.parse(it, track.durationMs) }
+                ?: com.abtinf.glassmusic.data.LyricsLoader.load(getApplication<Application>(), track)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

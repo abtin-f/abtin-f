@@ -22,6 +22,8 @@ object MediaStoreSource {
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.TRACK,
             MediaStore.Audio.Media.ALBUM_ARTIST,
+            MediaStore.Audio.Media.RELATIVE_PATH,
+            MediaStore.Audio.Media.DATA,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 30000"
         runCatching {
@@ -42,11 +44,17 @@ object MediaStoreSource {
                 val iYear = c.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
                 val iTrack = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
                 val iAlbumArtist = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ARTIST)
+                val iRel = c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+                val iData = c.getColumnIndex(MediaStore.Audio.Media.DATA)
                 while (c.moveToNext()) {
                     val id = c.getLong(iId)
                     val uri = ContentUris.withAppendedId(collection, id).toString()
                     val artist = c.getString(iArtist)?.takeUnless { it == "<unknown>" } ?: "Unknown Artist"
                     val album = c.getString(iAlbum)?.takeUnless { it.isBlank() } ?: "Unknown Album"
+                    val data = if (iData >= 0) c.getString(iData) else null
+                    val folder = (if (iRel >= 0) c.getString(iRel) else null)
+                        ?: data?.substringBeforeLast('/', "")?.removePrefix("/storage/emulated/0/")?.plus("/")
+                        ?: "Music/"
                     out += Track(
                         id = id,
                         title = c.getString(iTitle) ?: "Untitled",
@@ -63,6 +71,8 @@ object MediaStoreSource {
                         trackNo = c.getInt(iTrack) % 1000,
                         discNo = (c.getInt(iTrack) / 1000).coerceAtLeast(1),
                         albumArtist = c.getString(iAlbumArtist)?.takeUnless { it == "<unknown>" } ?: artist,
+                        folder = folder,
+                        path = data,
                     )
                 }
             }

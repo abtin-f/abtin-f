@@ -25,7 +25,7 @@ tap "Library"; shot library
 tap "Playlists"; shot playlists; back
 tap "Artists"; shot artists; back
 tap "Albums"; shot albums; back
-tap "Repo"; shot repo
+tap "Folders"; shot folders
 tap "Search"; shot search
 adb shell input tap 540 420; sleep 1; adb shell input text tame; sleep 2; shot search_results
 tap "Library" 0 0.25; shot tab_lens_midtap

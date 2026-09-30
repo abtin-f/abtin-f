@@ -56,6 +56,8 @@ object AmIcons {
     val RadioSelected = icon("radioSel", *RADIO.map { P(it) }.toTypedArray(), stroke = 2.3f)
     val Library = icon("library", *LIBRARY.map { P(it) }.toTypedArray())
     val LibrarySelected = icon("libSel", *LIBRARY.map { P(it) }.toTypedArray(), stroke = 2.3f)
+    private const val FOLDER = "M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"
+    val Folder = icon("folder", P(FOLDER))
     val Search = icon("search", P(SEARCH_D))
     val SearchSelected = icon("searchSel", P(SEARCH_D), stroke = 2.4f)
 

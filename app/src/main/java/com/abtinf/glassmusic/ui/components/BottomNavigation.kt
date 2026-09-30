@@ -22,7 +22,7 @@ import com.kyant.backdrop.Backdrop
 enum class Tab(val route: String, val label: String, val icon: ImageVector) {
     Home("home", "Home", AmIcons.HomeSelected),
     Library("library", "Library", AmIcons.Library),
-    Repo("repo", "Repo", AmIcons.New),
+    Folders("folders", "Folders", AmIcons.Folder),
     Search("search", "Search", AmIcons.Search),
 }
 

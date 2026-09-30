@@ -60,7 +60,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.abtinf.glassmusic.data.MusicRepository
-import com.abtinf.glassmusic.ui.browse.RepoScreen
+import com.abtinf.glassmusic.ui.browse.FoldersScreen
 import com.abtinf.glassmusic.ui.components.AppTabBar
 import com.abtinf.glassmusic.ui.components.LocalBackdrop
 import com.abtinf.glassmusic.ui.components.MiniPlayer
@@ -183,8 +183,8 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             composable(Tab.Home.route) {
                 HomeScreen(vm, bottomPad, requestPermission, ::openAlbum, ::openArtist, ::openPlaylist, ::openMetadata, ::openList)
             }
-            composable(Tab.Repo.route) {
-                RepoScreen(vm, bottomPad, onOpenPlayground = { openPlayground(null) }, onOpenAlbum = ::openAlbum)
+            composable(Tab.Folders.route) {
+                FoldersScreen(vm, bottomPad, onOpenFolder = { nav.navigate("detail/folder/$it") })
             }
             composable(Tab.Library.route) {
                 LibraryScreen(vm, bottomPad, ::openList, ::openAlbum, onOpenSearch = { goTab(Tab.Search) })
