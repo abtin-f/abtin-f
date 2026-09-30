@@ -2,6 +2,8 @@ name: Build debug APK
 on:
   push:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,3 +21,12 @@ jobs:
         with:
           name: GlassMusic-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+      - name: Publish APK as a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk GlassMusic-debug.apk
+          gh release create "build-${{ github.run_number }}" GlassMusic-debug.apk \
+            --target "${{ github.sha }}" --prerelease \
+            --title "Glass Music debug build ${{ github.run_number }}" \
+            --notes "Debug-signed APK built from ${{ github.sha }}."
