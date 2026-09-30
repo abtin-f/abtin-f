@@ -175,6 +175,9 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleShuffle() = controller.toggleShuffle()
     fun cycleRepeat() = controller.cycleRepeat()
     fun toggleSing() = controller.toggleSingMode()
+    val outputs = controller.outputs
+    val selectedOutput = controller.selectedOutput
+    fun selectOutput(id: Int) = controller.selectOutput(id)
     fun toggleEndless() = controller.toggleEndless()
     fun setSleepTimer(minutes: Int) = controller.setSleepTimer(minutes)
     fun sleepAtEndOfTrack() = controller.sleepAtEndOfTrack()

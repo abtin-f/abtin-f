@@ -62,6 +62,53 @@ class PlayerController(
 
     private var exoInitialized = false
 
+    // ---- audio output routing (headphones / bluetooth / phone speaker) -----------------------
+    data class OutputDevice(val id: Int, val name: String, val isPhone: Boolean)
+
+    private val audioManager by lazy { context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager }
+    private val _outputs = MutableStateFlow<List<OutputDevice>>(emptyList())
+    val outputs: StateFlow<List<OutputDevice>> = _outputs.asStateFlow()
+    private val _selectedOutput = MutableStateFlow<Int?>(null)
+    val selectedOutput: StateFlow<Int?> = _selectedOutput.asStateFlow()
+    private var preferredDevice: android.media.AudioDeviceInfo? = null
+    private var userPickedPhone = false
+
+    private fun isOutputType(t: Int) = when (t) {
+        android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+        android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET, android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+        android.media.AudioDeviceInfo.TYPE_BLE_HEADSET, android.media.AudioDeviceInfo.TYPE_BLE_SPEAKER,
+        android.media.AudioDeviceInfo.TYPE_USB_HEADSET, android.media.AudioDeviceInfo.TYPE_USB_DEVICE,
+        android.media.AudioDeviceInfo.TYPE_HEARING_AID -> true
+        else -> false
+    }
+
+    private fun applyPreferred(d: android.media.AudioDeviceInfo?) {
+        preferredDevice = d
+        _selectedOutput.value = d?.id
+        if (exoInitialized) exo.setPreferredAudioDevice(d)
+    }
+
+    private fun refreshOutputs(added: Array<out android.media.AudioDeviceInfo>? = null) {
+        val devs = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS).filter { isOutputType(it.type) }
+        _outputs.value = devs.map {
+            val phone = it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            OutputDevice(it.id, if (phone) "This phone" else it.productName?.toString()?.ifBlank { null } ?: "Headphones", phone)
+        }.sortedByDescending { it.isPhone }
+        val pref = preferredDevice
+        if (pref != null && devs.none { it.id == pref.id }) applyPreferred(null) // the device went away: back to default routing
+        // A newly connected headset/bluetooth device takes over, like the system's own player would.
+        val fresh = added?.firstOrNull { isOutputType(it.type) && it.type != android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+        if (fresh != null && !userPickedPhone) applyPreferred(devs.firstOrNull { it.id == fresh.id })
+        if (_selectedOutput.value == null) _selectedOutput.value = devs.firstOrNull { it.type != android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }?.id
+            ?: devs.firstOrNull { it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }?.id
+    }
+
+    fun selectOutput(id: Int) {
+        val dev = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.id == id } ?: return
+        userPickedPhone = dev.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+        applyPreferred(dev)
+    }
+
     private val exo: ExoPlayer by lazy {
         ExoPlayer.Builder(context)
             .setAudioAttributes(
@@ -73,6 +120,7 @@ class PlayerController(
             .build()
             .also { p ->
                 exoInitialized = true
+                p.setPreferredAudioDevice(preferredDevice)
                 p.addListener(object : Player.Listener {
                     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
                         if (currentIsReal() && p.playbackState != Player.STATE_ENDED) {
@@ -119,6 +167,16 @@ class PlayerController(
     private var controllerFuture: Any? = null
 
     init {
+        runCatching {
+            refreshOutputs()
+            audioManager.registerAudioDeviceCallback(object : android.media.AudioDeviceCallback() {
+                override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>) { refreshOutputs(addedDevices) }
+                override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>) {
+                    if (removedDevices.any { it.id == preferredDevice?.id }) userPickedPhone = false
+                    refreshOutputs()
+                }
+            }, android.os.Handler(android.os.Looper.getMainLooper()))
+        }
         scope.launch {
             while (true) {
                 delay(250)

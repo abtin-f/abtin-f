@@ -196,7 +196,7 @@ fun NowPlayingScreen(
                     onDetails = { menuOpen = false; detailsOpen = true },
                     onSleep = { menuOpen = false; sleepOpen = true },
                 )
-                OutputSheet(outputOpen, track, onDone = { outputOpen = false }, onConnect = { openOutputSwitcher(ctx) })
+                OutputSheet(outputOpen, track, vm, onDone = { outputOpen = false }, onConnect = { openOutputSwitcher(ctx) })
                 DetailsSheet(detailsOpen, track, onDone = { detailsOpen = false })
             }
         }
@@ -493,7 +493,7 @@ private fun MenuItem(icon: ImageVector, title: String, subtitle: String?, onClic
 private fun MenuDivider() = HorizontalDivider(Modifier.padding(horizontal = 14.dp), color = Color.White.copy(alpha = 0.18f))
 
 @Composable
-private fun OutputSheet(visible: Boolean, track: Track, onDone: () -> Unit, onConnect: () -> Unit) {
+private fun OutputSheet(visible: Boolean, track: Track, vm: MusicViewModel, onDone: () -> Unit, onConnect: () -> Unit) {
     val ctx = LocalContext.current
     AnimatedVisibility(visible, enter = fadeIn(tween(160)), exit = fadeOut(tween(160))) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f)).clickable(MutableInteractionSource(), null, onClick = onDone))
@@ -532,7 +532,18 @@ private fun OutputSheet(visible: Boolean, track: Track, onDone: () -> Unit, onCo
                     }
                 }
                 Spacer(Modifier.height(18.dp))
-                Text("This phone", style = AmType.Caption.copy(fontSize = 13.sp), color = Color.White.copy(alpha = 0.85f))
+                val devices by vm.outputs.collectAsState()
+                val selectedId by vm.selectedOutput.collectAsState()
+                devices.forEach { d ->
+                    val on = d.id == selectedId
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { vm.selectOutput(d.id) }.padding(vertical = 8.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(d.name, style = AmType.Body.copy(fontSize = 15.sp), color = Color.White.copy(alpha = if (on) 1f else 0.7f), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (on) Icon(AmIcons.Check, "Selected", tint = Color(0xFFF4B6C2), modifier = Modifier.size(20.dp))
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 DottedVolume(ctx)
                 Spacer(Modifier.height(14.dp))
