@@ -28,6 +28,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.abtinf.glassmusic.ui.components.LocalBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,7 +97,10 @@ fun DetailScreen(
         (tracks.firstOrNull { it.bitrateKbps > 0 }?.let { "  •  ${formats.singleOrNull() ?: "Mixed"} ${if (formats.size == 1) "${it.bitrateKbps}kbps" else ""}".trimEnd() } ?: "")
     val cover = tracks.firstOrNull()
 
+    val backdrop = rememberLayerBackdrop()
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         DynamicAlbumBackground(cover, Modifier.fillMaxSize(), scrimAlpha = 0.25f)
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPad)) {
             item {
@@ -162,6 +169,8 @@ fun DetailScreen(
             }
         }
 
+        }
+
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             RoundTranslucent(AmIcons.ChevronLeft, "Back", onBack)
             Spacer(Modifier.weight(1f))
@@ -171,6 +180,7 @@ fun DetailScreen(
                 RoundTranslucent(AmIcons.Trash, "Delete") { confirmDelete = true }
             }
         }
+    }
     }
 
     if (confirmDelete && playlist != null) {

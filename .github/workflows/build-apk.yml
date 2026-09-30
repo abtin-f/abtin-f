@@ -51,6 +51,7 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
+          profile: pixel_6
           disable-animations: true
           script: bash ci/emulator-flow.sh
       - uses: actions/upload-artifact@v4

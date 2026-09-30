@@ -34,6 +34,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.abtinf.glassmusic.ui.components.LocalBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,7 +83,10 @@ fun MetadataScreen(trackId: Long, vm: MusicViewModel, bottomPad: Dp, onBack: () 
     if (track == null) { Box(Modifier.fillMaxSize().background(am.background)); return }
     val albumTracks = library.albumById[track.albumId]?.tracks?.size ?: 1
 
+    val backdrop = rememberLayerBackdrop()
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(am.background)) {
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPad)) {
             item { Spacer(Modifier.statusBarsPadding().height(72.dp)) }
             item {
@@ -133,6 +140,8 @@ fun MetadataScreen(trackId: Long, vm: MusicViewModel, bottomPad: Dp, onBack: () 
             }
         }
 
+        }
+
         // glass top bar
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -153,6 +162,7 @@ fun MetadataScreen(trackId: Long, vm: MusicViewModel, bottomPad: Dp, onBack: () 
                 }
             }
         }
+    }
     }
 
     if (confirmDelete) {

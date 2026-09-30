@@ -21,5 +21,6 @@ adb shell input tap 540 1300; sleep 1
 python3 ci/tap.py "Lyrics"; sleep 2; shot 08_lyrics
 python3 ci/tap.py "Queue"; sleep 2; shot 09_queue
 python3 ci/tap.py "Output"; sleep 2; shot 10_output
-adb logcat -d -t 3000 > out/logcat.txt
+adb logcat -d -b crash > out/crash.txt
+adb logcat -d -s AndroidRuntime:E ActivityManager:I > out/runtime.txt
 adb shell pidof com.abtinf.glassmusic > out/pid.txt || echo "NOT RUNNING" > out/pid.txt
