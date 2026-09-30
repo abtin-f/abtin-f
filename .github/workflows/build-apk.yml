@@ -30,3 +30,40 @@ jobs:
             --target "${{ github.sha }}" --prerelease \
             --title "Glass Music debug build ${{ github.run_number }}" \
             --notes "Debug-signed APK built from ${{ github.sha }}."
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: GlassMusic-debug-apk
+          path: apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install, launch and screenshot on an Android 14 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            mkdir -p out
+            adb install -r apk/app-debug.apk 2>&1 | tee out/install.txt
+            adb shell pm grant com.abtinf.glassmusic android.permission.READ_MEDIA_AUDIO || true
+            adb shell pm grant com.abtinf.glassmusic android.permission.POST_NOTIFICATIONS || true
+            adb logcat -c
+            adb shell am start -n com.abtinf.glassmusic/.MainActivity
+            sleep 12
+            adb exec-out screencap -p > out/home.png
+            adb logcat -d -t 2000 > out/logcat.txt
+            adb shell pidof com.abtinf.glassmusic > out/pid.txt || echo "NOT RUNNING" > out/pid.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-output
+          path: out
