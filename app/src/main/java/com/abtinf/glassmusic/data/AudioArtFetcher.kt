@@ -62,6 +62,28 @@ class AudioArtFetcher(private val data: AudioArt, private val options: Options) 
         }
     }.getOrNull()
 
+    companion object {
+        /** Small JPEG of the embedded cover, for the system media notification / lock screen. */
+        fun notificationArt(ctx: android.content.Context, uri: Uri): ByteArray? {
+            val bmp = runCatching {
+                val mmr = MediaMetadataRetriever()
+                try {
+                    mmr.setDataSource(ctx, uri)
+                    val bytes = mmr.embeddedPicture ?: return@runCatching null
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                    var sample = 1
+                    while (bounds.outWidth / (sample * 2) >= 768 && bounds.outHeight / (sample * 2) >= 768) sample *= 2
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                } finally { mmr.release() }
+            }.getOrNull() ?: return null
+            return java.io.ByteArrayOutputStream().use { out ->
+                bmp.compress(Bitmap.CompressFormat.JPEG, 88, out)
+                out.toByteArray()
+            }
+        }
+    }
+
     class Factory : Fetcher.Factory<AudioArt> {
         override fun create(data: AudioArt, options: Options, imageLoader: ImageLoader): Fetcher =
             AudioArtFetcher(data, options)

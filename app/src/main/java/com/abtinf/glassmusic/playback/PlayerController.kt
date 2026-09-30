@@ -300,7 +300,12 @@ class PlayerController(
         if (t.uri != null) {
             exo.setMediaItem(
                 MediaItem.Builder().setUri(t.uri).setMediaMetadata(
-                    MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).build(),
+                    MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).apply {
+                        t.artUri?.let { u ->
+                            com.abtinf.glassmusic.data.AudioArtFetcher.notificationArt(context, android.net.Uri.parse(u))
+                                ?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+                        }
+                    }.build(),
                 ).build(),
             )
             exo.prepare()

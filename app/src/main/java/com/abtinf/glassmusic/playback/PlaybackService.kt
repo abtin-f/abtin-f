@@ -12,7 +12,11 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         val player = (application as App).container.player.sessionPlayer
-        session = MediaSession.Builder(this, player).build()
+        val open = android.app.PendingIntent.getActivity(
+            this, 0, Intent(this, com.abtinf.glassmusic.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        session = MediaSession.Builder(this, player).setSessionActivity(open).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

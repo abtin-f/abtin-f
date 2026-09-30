@@ -89,14 +89,6 @@ fun LibraryScreen(
                 Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onOpenSearch), contentAlignment = Alignment.Center) {
                     Icon(AmIcons.Search, "Search", tint = AmAccent, modifier = Modifier.size(24.dp))
                 }
-                Row(
-                    Modifier.clip(RoundedCornerShape(20.dp)).clickable { onOpenList("downloaded") }.padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(AmIcons.Download, null, tint = AmAccent, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Downloads", style = AmType.Body.copy(fontSize = 16.sp), color = AmAccent)
-                }
             }
         }
         item { Text("Library", style = AmType.LargeTitle, color = am.text, modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 12.dp)) }

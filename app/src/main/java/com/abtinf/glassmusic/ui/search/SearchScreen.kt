@@ -25,6 +25,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -101,19 +105,38 @@ fun SearchScreen(
         }
         if (query.isBlank()) {
             item { SectionHeader("Browse Your Library", Modifier.padding(top = 16.dp)) }
+            val library by vm.library.collectAsState()
+            val playlists by vm.playlists.collectAsState()
+            val songs = library.recentlyAddedTracks
             val tiles = listOf(
-                Triple("songs", "Songs", Color(0xFFFA2D48)), Triple("artists", "Artists", Color(0xFF7B61FF)),
-                Triple("albums", "Albums", Color(0xFF0FA3B1)), Triple("playlists", "Playlists", Color(0xFFF2994A)),
+                BrowseTileData("songs", "Songs", Color(0xFFFA2D48), songs.take(3), false),
+                BrowseTileData("artists", "Artists", Color(0xFF7B61FF), library.artists.take(3).map { it.cover }, true),
+                BrowseTileData("albums", "Albums", Color(0xFF0FA3B1), library.albums.take(3).map { it.cover }, false),
+                BrowseTileData(
+                    "playlists", "Playlists", Color(0xFFF2994A),
+                    playlists.flatMap { vm.resolve(it).take(1) }.ifEmpty { songs.drop(3).take(3) }.take(3), false,
+                ),
             )
-            items(tiles.chunked(2), key = { it.first().first }) { row ->
+            items(tiles.chunked(2), key = { it.first().kind }) { row ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { (kind, label, color) ->
-                        Box(
-                            Modifier.weight(1f).height(96.dp).clip(RoundedCornerShape(12.dp))
-                                .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f))))
-                                .clickable { onOpenList(kind) }.padding(12.dp),
-                        ) {
-                            Text(label, style = AmType.Title, color = Color.White, modifier = Modifier.align(Alignment.TopStart))
+                    row.forEachIndexed { i, t -> BrowseTile(t, i, Modifier.weight(1f)) { onOpenList(t.kind) } }
+                }
+            }
+            val discover = library.tracks.shuffled(java.util.Random(7)).take(12)
+            if (discover.isNotEmpty()) {
+                item { SectionHeader("Discover", Modifier.padding(top = 20.dp)) }
+                item {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        itemsIndexed(discover, key = { _, t -> "d${t.id}" }) { i, t ->
+                            val tilt = if (i % 2 == 0) -4f else 4f
+                            Column(
+                                Modifier.width(132.dp).graphicsLayer { rotationZ = tilt }.clickable { vm.play(discover, i) },
+                            ) {
+                                Artwork(t, Modifier.size(132.dp), corner = 12.dp, elevation = 6.dp)
+                                Spacer(Modifier.height(6.dp))
+                                Text(t.title, style = AmType.Body.copy(fontSize = 14.sp), color = am.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(t.artist, style = AmType.Caption.copy(fontSize = 12.sp), color = am.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
                         }
                     }
                 }
@@ -183,5 +206,38 @@ fun SearchScreen(
                 }
             }
         }
+    }
+}
+
+private data class BrowseTileData(val kind: String, val label: String, val color: Color, val covers: List<com.abtinf.glassmusic.data.Track>, val round: Boolean)
+
+/** Gradient tile with the user's own covers fanned out at a tilt, gently swaying. */
+@Composable
+private fun BrowseTile(data: BrowseTileData, index: Int, modifier: Modifier, onClick: () -> Unit) {
+    val sway = androidx.compose.animation.core.rememberInfiniteTransition(label = "sway")
+    val swing by sway.animateFloat(
+        initialValue = -1f, targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(3200 + index * 400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "swing",
+    )
+    Box(
+        modifier.height(112.dp).clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(data.color, data.color.copy(alpha = 0.65f))))
+            .clickable(onClick = onClick),
+    ) {
+        data.covers.forEachIndexed { i, t ->
+            val base = listOf(14f, -6f, 22f).getOrElse(i) { 0f }
+            Artwork(
+                t,
+                Modifier.align(Alignment.CenterEnd).padding(end = (8 + i * 22).dp, top = (i * 6).dp).size(if (i == 0) 76.dp else 64.dp)
+                    .graphicsLayer { rotationZ = base + swing * (3f + i); translationY = swing * 2f * (i + 1) }
+                    .then(if (data.round) Modifier.clip(CircleShape) else Modifier),
+                corner = if (data.round) 40.dp else 10.dp, elevation = 6.dp,
+            )
+        }
+        Text(data.label, style = AmType.Title, color = Color.White, modifier = Modifier.align(Alignment.TopStart).padding(12.dp))
     }
 }
