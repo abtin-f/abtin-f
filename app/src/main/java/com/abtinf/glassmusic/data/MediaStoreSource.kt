@@ -25,7 +25,9 @@ object MediaStoreSource {
             MediaStore.Audio.Media.RELATIVE_PATH,
             MediaStore.Audio.Media.DATA,
         )
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 30000"
+        // Not IS_MUSIC: downloaded FLAC/M4A files are often not flagged as music by the scanner.
+        val selection = "${MediaStore.Audio.Media.IS_RINGTONE} = 0 AND ${MediaStore.Audio.Media.IS_NOTIFICATION} = 0 AND " +
+            "${MediaStore.Audio.Media.IS_ALARM} = 0 AND ${MediaStore.Audio.Media.DURATION} >= 30000"
         runCatching {
             context.contentResolver.query(
                 collection, projection, selection, null,
