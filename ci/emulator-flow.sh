@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs inside the emulator job: installs the APK, walks through the main screens, saves screenshots.
 mkdir -p out
-adb install -r apk/app-debug.apk 2>&1 | tee out/install.txt
+adb install -r apk/release/app-release.apk 2>&1 | tee out/install.txt
 adb shell pm grant com.abtinf.glassmusic android.permission.READ_MEDIA_AUDIO || true
 adb shell pm grant com.abtinf.glassmusic android.permission.POST_NOTIFICATIONS || true
 adb logcat -c

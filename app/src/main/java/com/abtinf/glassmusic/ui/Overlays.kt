@@ -139,7 +139,7 @@ fun PlaylistPickerDialog(tracks: List<Track>, vm: MusicViewModel) {
 
 @Composable
 fun SettingsDialog(vm: MusicViewModel, onRequestPermission: () -> Unit) {
-    val state by vm.playerState.collectAsState()
+    val state by vm.playback.collectAsState()
     val lib by vm.library.collectAsState()
     AlertDialog(
         onDismissRequest = { vm.setShowSettings(false) },

@@ -33,8 +33,11 @@ enum class Tab(val route: String, val label: String, val icon: ImageVector) {
 @Composable
 fun AppTabBar(selected: Tab, onSelect: (Tab) -> Unit, backdrop: Backdrop, modifier: Modifier = Modifier) {
     val am = LocalAm.current
+    // The selection lambda must be stable and read state, otherwise the lens never notices a plain tap.
+    val current = androidx.compose.runtime.rememberUpdatedState(selected)
+    val selectedIndex = androidx.compose.runtime.remember { { current.value.ordinal } }
     LiquidBottomTabs(
-        selectedTabIndex = { selected.ordinal },
+        selectedTabIndex = selectedIndex,
         onTabSelected = { onSelect(Tab.entries[it]) },
         backdrop = backdrop,
         tabsCount = Tab.entries.size,

@@ -30,6 +30,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            // Optimised (R8) build for phones; signed with the debug key so it installs without extra setup.
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

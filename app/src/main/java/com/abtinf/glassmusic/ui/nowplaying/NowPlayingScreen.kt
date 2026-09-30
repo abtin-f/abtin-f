@@ -122,7 +122,7 @@ fun NowPlayingScreen(
     modifier: Modifier = Modifier,
 ) {
     val ctx = LocalContext.current
-    val ps by vm.playerState.collectAsState()
+    val ps by vm.playback.collectAsState()
     val lyrics by vm.currentLyrics.collectAsState()
     val favorites by vm.favorites.collectAsState()
     val track = ps.current
@@ -168,8 +168,9 @@ fun NowPlayingScreen(
                                         CompactHeader(track, fav, shared, { vm.toggleFavorite(track) }, { menuOpen = true })
                                         if (m == NpMode.Lyrics) {
                                             Spacer(Modifier.height(12.dp))
+                                            val position by vm.positionMs.collectAsState()
                                             LyricsView(
-                                                lines = lyrics, positionMs = ps.positionMs, showTranslation = true,
+                                                lines = lyrics, positionMs = position, showTranslation = true,
                                                 onSeek = { vm.seekMs(it) }, onImport = { importer.launch(arrayOf("*/*")) },
                                             )
                                         } else {
@@ -284,11 +285,12 @@ private fun PlainIcon(icon: ImageVector, desc: String, modifier: Modifier, onCli
 @Composable
 private fun Footer(vm: MusicViewModel, ps: PlayerState, track: Track, mode: NpMode, onMode: (NpMode) -> Unit, onOutput: () -> Unit) {
     val ctx = LocalContext.current
+    val position by vm.positionMs.collectAsState()
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
         val dur = ps.durationMs.coerceAtLeast(1L)
-        SeekBar(progress = ps.positionMs / dur.toFloat(), onSeek = { vm.seekFraction(it) })
+        SeekBar(progress = position / dur.toFloat(), onSeek = { vm.seekFraction(it) })
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(formatTime(ps.positionMs), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
+            Text(formatTime(position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 val label = if (ps.isMixing) "Mixing" else ""
                 Crossfade(label, label = "npLabel") { l ->
@@ -303,7 +305,7 @@ private fun Footer(vm: MusicViewModel, ps: PlayerState, track: Track, mode: NpMo
                     }
                 }
             }
-            Text("-" + formatTime(dur - ps.positionMs), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
+            Text("-" + formatTime(dur - position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
         }
 
         Row(

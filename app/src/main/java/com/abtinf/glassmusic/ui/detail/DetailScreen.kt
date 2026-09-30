@@ -80,7 +80,7 @@ fun DetailScreen(
 ) {
     val am = LocalAm.current
     val library by vm.library.collectAsState()
-    val player by vm.playerState.collectAsState()
+    val player by vm.playback.collectAsState()
     val playlists by vm.playlists.collectAsState()
     var confirmDelete by remember { mutableStateOf(false) }
 

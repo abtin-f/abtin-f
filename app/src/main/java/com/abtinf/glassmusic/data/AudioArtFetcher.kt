@@ -23,8 +23,9 @@ class AudioArtKeyer : Keyer<AudioArt> {
 class AudioArtFetcher(private val data: AudioArt, private val options: Options) : Fetcher {
     override suspend fun fetch(): FetchResult? = withContext(Dispatchers.IO) {
         val ctx = options.context
+        val px = (options.size.width as? coil.size.Dimension.Pixels)?.px?.coerceIn(96, 800) ?: 512
         val bmp = runCatching {
-            ctx.contentResolver.loadThumbnail(Uri.parse(data.uri), Size(640, 640), null)
+            ctx.contentResolver.loadThumbnail(Uri.parse(data.uri), Size(px, px), null)
         }.getOrNull() ?: return@withContext null
         DrawableResult(BitmapDrawable(ctx.resources, bmp), false, DataSource.DISK)
     }

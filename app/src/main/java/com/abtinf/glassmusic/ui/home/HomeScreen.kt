@@ -58,7 +58,7 @@ fun HomeScreen(
     val am = LocalAm.current
     val home by vm.home.collectAsState()
     val library by vm.library.collectAsState()
-    val player by vm.playerState.collectAsState()
+    val player by vm.playback.collectAsState()
 
     LazyColumn(
         Modifier.fillMaxSize().background(am.background),

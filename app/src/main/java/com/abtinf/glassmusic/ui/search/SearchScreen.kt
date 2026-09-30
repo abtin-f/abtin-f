@@ -65,7 +65,7 @@ fun SearchScreen(
     val query by vm.query.collectAsState()
     val filter by vm.searchFilter.collectAsState()
     val results by vm.searchResults.collectAsState()
-    val player by vm.playerState.collectAsState()
+    val player by vm.playback.collectAsState()
     val focus = LocalFocusManager.current
 
     LazyColumn(Modifier.fillMaxSize().background(am.background), contentPadding = PaddingValues(bottom = bottomPad)) {

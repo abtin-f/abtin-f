@@ -85,7 +85,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     val scope = rememberCoroutineScope()
     val nav = rememberNavController()
 
-    val ps by vm.playerState.collectAsState()
+    val ps by vm.playback.collectAsState()
     val menu by vm.menu.collectAsState()
     val picker by vm.pickerTracks.collectAsState()
     val showSettings by vm.showSettings.collectAsState()
@@ -105,10 +105,10 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
 
     // 0 = mini-player, 1 = full-screen Now Playing
     val expand = remember { Animatable(0f) }
-    val expanded = expand.value > 0.001f
+    val expanded by remember { androidx.compose.runtime.derivedStateOf { expand.value > 0.001f } }
     BackHandler(enabled = expanded) { scope.launch { expand.animateTo(0f, tween(340)) } }
 
-    val lightBars = !am.isDark && expand.value < 0.5f
+    val lightBars = false
     SideEffect {
         val window = (view.context as? Activity)?.window ?: return@SideEffect
         val c = WindowCompat.getInsetsController(window, view)
@@ -121,6 +121,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     }
 
     fun goTab(t: Tab) {
+        tab = t
         nav.navigate(t.route) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true

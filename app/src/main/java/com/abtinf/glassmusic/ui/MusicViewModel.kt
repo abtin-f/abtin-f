@@ -64,6 +64,14 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
 
     val library: StateFlow<Library> = repo.library
     val playerState: StateFlow<PlayerState> = controller.state
+
+    /** Player state without the ticking position, so list screens don't recompose four times a second. */
+    val playback: StateFlow<PlayerState> = controller.state
+        .map { it.copy(positionMs = 0L) }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, PlayerState())
+    val positionMs: StateFlow<Long> = controller.state
+        .map { it.positionMs }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0L)
     val favorites = store.favorites
     val playlists = store.playlists
 
