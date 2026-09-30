@@ -1,7 +1,7 @@
 # Glass Music
 
 An offline, Apple Music–style player for Android (Jetpack Compose, Media3, Coil, Navigation Compose).
-Translucent "liquid glass" surfaces are used for the mini-player, tab bar and player controls only;
+Translucent "liquid glass" surfaces (built on [AndroidLiquidGlass](https://github.com/Kyant0/AndroidLiquidGlass) by Kyant0, Apache-2.0 – see NOTICE.md) are used for the mini-player, tab bar and player controls only;
 everything else stays flat and artwork-first.
 
 ## Screens

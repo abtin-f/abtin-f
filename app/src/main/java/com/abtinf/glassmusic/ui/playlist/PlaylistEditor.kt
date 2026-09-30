@@ -66,10 +66,14 @@ import androidx.compose.ui.unit.sp
 import com.abtinf.glassmusic.data.Track
 import com.abtinf.glassmusic.ui.MusicViewModel
 import com.abtinf.glassmusic.ui.components.Artwork
+import com.abtinf.glassmusic.ui.components.LocalBackdrop
 import com.abtinf.glassmusic.ui.components.glass
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.abtinf.glassmusic.ui.theme.AmIcons
 import com.abtinf.glassmusic.ui.theme.AmType
 import androidx.compose.animation.animateContentSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlin.math.roundToInt
@@ -100,11 +104,14 @@ fun PlaylistEditor(vm: MusicViewModel, onClose: () -> Unit) {
         }
     }
 
-    Box(
-        Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(Color(0xFF0A1B4D), Color(0xFF0B3B6B), Color(0xFF0D5C5A), Color(0xFF2E6B2E))),
-        ),
-    ) {
+    val backdrop = rememberLayerBackdrop()
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().layerBackdrop(backdrop).background(
+                Brush.verticalGradient(listOf(Color(0xFF0A1B4D), Color(0xFF0B3B6B), Color(0xFF0D5C5A), Color(0xFF2E6B2E))),
+            ),
+        ) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 88.dp, bottom = 160.dp),
@@ -172,6 +179,8 @@ fun PlaylistEditor(vm: MusicViewModel, onClose: () -> Unit) {
                     )
                 }
             }
+        }
+
         }
 
         // top bar
@@ -242,6 +251,7 @@ fun PlaylistEditor(vm: MusicViewModel, onClose: () -> Unit) {
                 contentAlignment = Alignment.Center,
             ) { Icon(AmIcons.Mic, "Voice", tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(22.dp)) }
         }
+    }
     }
 
     if (renaming) {

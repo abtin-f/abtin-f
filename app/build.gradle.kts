@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -6,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.abtinf.glassmusic"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.abtinf.glassmusic"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -27,9 +29,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
 }
 
 dependencies {
@@ -40,14 +45,17 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    val composeBom = platform("androidx.compose:compose-bom:2024.09.03")
-    implementation(composeBom)
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    val compose = "1.10.3"
+    implementation("androidx.compose.ui:ui:$compose")
+    implementation("androidx.compose.ui:ui-graphics:$compose")
+    implementation("androidx.compose.foundation:foundation:$compose")
+    implementation("androidx.compose.ui:ui-tooling-preview:$compose")
+    implementation("androidx.compose.material3:material3:1.4.0")
+    debugImplementation("androidx.compose.ui:ui-tooling:$compose")
+
+    // Liquid Glass (Apache-2.0): https://github.com/Kyant0/AndroidLiquidGlass
+    implementation("io.github.kyant0:backdrop:1.0.6")
+    implementation("io.github.kyant0:shapes:1.2.0")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.palette:palette-ktx:1.0.0")

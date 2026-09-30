@@ -45,6 +45,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -71,11 +72,14 @@ import com.abtinf.glassmusic.ui.MusicViewModel
 import com.abtinf.glassmusic.ui.components.Artwork
 import com.abtinf.glassmusic.ui.components.DynamicAlbumBackground
 import com.abtinf.glassmusic.ui.components.Equalizer
+import com.abtinf.glassmusic.ui.components.LocalBackdrop
 import com.abtinf.glassmusic.ui.components.SeekBar
 import com.abtinf.glassmusic.ui.components.glass
 import com.abtinf.glassmusic.ui.theme.AmAccent
 import com.abtinf.glassmusic.ui.theme.AmIcons
 import com.abtinf.glassmusic.ui.theme.AmType
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -111,8 +115,10 @@ fun NowPlayingScreen(
         }
     }
 
+    val backdrop = rememberLayerBackdrop()
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(modifier.fillMaxSize()) {
-        DynamicAlbumBackground(track)
+        DynamicAlbumBackground(track, Modifier.fillMaxSize().layerBackdrop(backdrop))
 
         if (track != null) BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             val artSize = minOf(maxWidth - 48.dp, maxHeight * 0.42f)
@@ -244,6 +250,7 @@ fun NowPlayingScreen(
                 onAutoMix = { vm.setAutoMix(!ps.autoMix) },
             )
         }
+    }
     }
 }
 

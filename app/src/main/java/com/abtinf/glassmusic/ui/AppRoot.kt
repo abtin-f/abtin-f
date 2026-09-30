@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -58,6 +59,7 @@ import com.abtinf.glassmusic.data.MusicRepository
 import com.abtinf.glassmusic.ui.browse.NewScreen
 import com.abtinf.glassmusic.ui.browse.RadioScreen
 import com.abtinf.glassmusic.ui.components.BottomNavigation
+import com.abtinf.glassmusic.ui.components.LocalBackdrop
 import com.abtinf.glassmusic.ui.components.MiniPlayer
 import com.abtinf.glassmusic.ui.components.Tab
 import com.abtinf.glassmusic.ui.detail.DetailScreen
@@ -68,6 +70,8 @@ import com.abtinf.glassmusic.ui.nowplaying.NowPlayingScreen
 import com.abtinf.glassmusic.ui.playlist.PlaylistEditor
 import com.abtinf.glassmusic.ui.search.SearchScreen
 import com.abtinf.glassmusic.ui.theme.LocalAm
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.launch
 
 private const val PLAYGROUND = "playground"
@@ -132,6 +136,8 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
         nav.navigate(PLAYGROUND)
     }
 
+    val backdrop = rememberLayerBackdrop()
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     BoxWithConstraints(Modifier.fillMaxSize().background(am.background)) {
         val heightPx = with(density) { maxHeight.toPx() }
         var barsHeight by remember { mutableStateOf(0.dp) }
@@ -158,6 +164,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
         }
 
         val fade = tween<Float>(220)
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
         NavHost(
             navController = nav,
             startDestination = Tab.Home.route,
@@ -213,6 +220,8 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             }
         }
 
+        }
+
         // floating mini-player + navigation pill
         AnimatedVisibility(
             visible = showBars,
@@ -260,6 +269,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                 )
             }
         }
+    }
     }
 
     menu?.let { m -> TrackMenuSheet(m, vm, onOpenAlbum = { openAlbum(it); settle(false) }, onOpenArtist = { openArtist(it); settle(false) }) }
