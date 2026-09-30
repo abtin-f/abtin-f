@@ -3,12 +3,14 @@
 APK=${1:-apk/release/app-release.apk}
 PKG=com.abtinf.glassmusic
 mkdir -p out
+# Let the freshly booted emulator settle (system apps hog the CPU for the first ~30s and cause bogus ANRs).
+sleep 40
 adb install -r "$APK" 2>&1 | tee out/install.txt
 adb shell pm grant $PKG android.permission.READ_MEDIA_AUDIO || true
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 adb logcat -c
 adb shell am start -n $PKG/.MainActivity
-sleep 10
+sleep 12
 
 n=0
 shot() { n=$((n+1)); name=$(printf "%02d_%s" $n "$1"); adb exec-out screencap -p > out/$name.png
