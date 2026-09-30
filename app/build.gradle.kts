@@ -18,6 +18,14 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Some phone installers reject APKs that carry only the v2/v3 signature block, so also write the v1 (JAR) one.
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
