@@ -46,14 +46,13 @@ fun Modifier.glass(
         return this
             .then(if (elevation > 0.dp) Modifier.shadow(elevation, shape, clip = false, ambientColor = Color(0x22000000), spotColor = Color(0x33000000)) else Modifier)
             .clip(shape)
-            .background(fill)
+            .background(fill.copy(alpha = maxOf(fill.alpha, 0.88f)))
             .border(
                 borderWidth,
                 Brush.linearGradient(listOf(highlight.copy(alpha = 0.75f), highlight.copy(alpha = 0.06f), highlight.copy(alpha = 0.4f)), start = Offset.Zero, end = Offset.Infinite),
                 shape,
             )
     }
-    val tint = fill.copy(alpha = fill.alpha * 0.6f)
     return this.drawBackdrop(
         backdrop = backdrop,
         shape = { shape },
@@ -66,6 +65,6 @@ fun Modifier.glass(
         shadow = if (elevation > 0.dp) {
             { Shadow(radius = elevation * 1.6f) }
         } else null,
-        onDrawSurface = { drawRect(tint) },
+        onDrawSurface = { drawRect(fill) },
     )
 }

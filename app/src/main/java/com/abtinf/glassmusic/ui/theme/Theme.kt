@@ -10,12 +10,15 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.abtinf.glassmusic.R
 
 /** Vivid pink/red used for selection and primary actions. */
-val AmAccent = Color(0xFFFA2D48)
+val AmAccent = Color(0xFFE8384A)
 
 @Immutable
 data class AmColors(
@@ -37,7 +40,7 @@ val LightAm = AmColors(
     secondary = Color(0xFF8E8E93),
     tertiary = Color(0xFFC7C7CC),
     separator = Color(0x1F3C3C43),
-    glass = Color(0xD9FFFFFF),
+    glass = Color(0xFFFAFAFA).copy(alpha = 0.4f),
     glassHighlight = Color.White,
     isDark = false,
 )
@@ -46,10 +49,10 @@ val DarkAm = AmColors(
     background = Color.Black,
     surface = Color(0xFF1C1C1E),
     text = Color.White,
-    secondary = Color(0xFF98989F),
+    secondary = Color(0xFF8E8E93),
     tertiary = Color(0xFF48484A),
-    separator = Color(0x33FFFFFF),
-    glass = Color(0xCC2C2C2E),
+    separator = Color(0x26FFFFFF),
+    glass = Color(0xFF121212).copy(alpha = 0.45f),
     glassHighlight = Color.White,
     isDark = true,
 )
@@ -57,11 +60,18 @@ val DarkAm = AmColors(
 val LocalAm = staticCompositionLocalOf { LightAm }
 
 /** SF Pro cannot be bundled; Android's system sans (Roboto / Google Sans) is the closest match. */
-private val Sans = FontFamily.SansSerif
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+private fun inter(w: FontWeight) = Font(
+    R.font.inter, w,
+    variationSettings = FontVariation.Settings(FontVariation.weight(w.weight)),
+)
+
+/** Inter (SIL OFL) variable font, the closest free match to the reference typography. */
+val Sans = FontFamily(inter(FontWeight.Normal), inter(FontWeight.Medium), inter(FontWeight.SemiBold), inter(FontWeight.Bold))
 
 object AmType {
-    val LargeTitle = TextStyle(fontFamily = Sans, fontSize = 34.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
-    val Section = TextStyle(fontFamily = Sans, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp)
+    val LargeTitle = TextStyle(fontFamily = Sans, fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
+    val Section = TextStyle(fontFamily = Sans, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
     val Title = TextStyle(fontFamily = Sans, fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold)
     val Body = TextStyle(fontFamily = Sans, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium)
     val Caption = TextStyle(fontFamily = Sans, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Normal)
@@ -70,7 +80,7 @@ object AmType {
 }
 
 @Composable
-fun GlassMusicTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun GlassMusicTheme(dark: Boolean = true, content: @Composable () -> Unit) {
     val am = if (dark) DarkAm else LightAm
     val scheme = if (dark) {
         darkColorScheme(primary = AmAccent, background = am.background, surface = am.surface, onSurface = am.text)

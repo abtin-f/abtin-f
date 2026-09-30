@@ -14,6 +14,13 @@ data class Track(
     val artUri: String?,
     val dateAdded: Long,
     val lyrics: List<LyricLine> = emptyList(),
+    val format: String = "MP3",
+    val bitrateKbps: Int = 0,
+    val sizeBytes: Long = 0,
+    val year: Int = 0,
+    val trackNo: Int = 0,
+    val discNo: Int = 1,
+    val albumArtist: String = "",
 ) {
     val albumId: Long get() = albumIdOf(album, artist)
     val artistId: Long get() = artistIdOf(artist)

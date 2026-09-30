@@ -15,6 +15,13 @@ object MediaStoreSource {
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.MIME_TYPE,
+            MediaStore.Audio.Media.DISPLAY_NAME,
+            MediaStore.Audio.Media.BITRATE,
+            MediaStore.Audio.Media.SIZE,
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.TRACK,
+            MediaStore.Audio.Media.ALBUM_ARTIST,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 30000"
         runCatching {
@@ -28,6 +35,13 @@ object MediaStoreSource {
                 val iAlbum = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
                 val iDur = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
                 val iAdded = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+                val iMime = c.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+                val iName = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+                val iBitrate = c.getColumnIndexOrThrow(MediaStore.Audio.Media.BITRATE)
+                val iSize = c.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
+                val iYear = c.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+                val iTrack = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+                val iAlbumArtist = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ARTIST)
                 while (c.moveToNext()) {
                     val id = c.getLong(iId)
                     val uri = ContentUris.withAppendedId(collection, id).toString()
@@ -42,10 +56,27 @@ object MediaStoreSource {
                         uri = uri,
                         artUri = uri,
                         dateAdded = c.getLong(iAdded),
+                        format = formatOf(c.getString(iMime), c.getString(iName)),
+                        bitrateKbps = c.getInt(iBitrate) / 1000,
+                        sizeBytes = c.getLong(iSize),
+                        year = c.getInt(iYear),
+                        trackNo = c.getInt(iTrack) % 1000,
+                        discNo = (c.getInt(iTrack) / 1000).coerceAtLeast(1),
+                        albumArtist = c.getString(iAlbumArtist)?.takeUnless { it == "<unknown>" } ?: artist,
                     )
                 }
             }
         }
         return out
+    }
+
+    private fun formatOf(mime: String?, name: String?): String = when (mime?.lowercase()) {
+        "audio/flac", "audio/x-flac" -> "FLAC"
+        "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/aac", "audio/aacp" -> "M4A"
+        "audio/mpeg", "audio/mp3" -> "MP3"
+        "audio/ogg", "application/ogg" -> "OGG"
+        "audio/opus" -> "OPUS"
+        "audio/x-wav", "audio/wav" -> "WAV"
+        else -> name?.substringAfterLast('.', "")?.uppercase()?.ifBlank { null } ?: "AUDIO"
     }
 }

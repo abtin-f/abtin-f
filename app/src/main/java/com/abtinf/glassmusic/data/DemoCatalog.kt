@@ -14,7 +14,15 @@ object DemoCatalog {
         lyrics: List<LyricLine> = emptyList(),
     ): Track {
         nextAdded -= 86_400
-        return Track(nextId--, title, artist, album, seconds * 1000L, null, null, nextAdded, lyrics)
+        val n = -nextId.toInt()
+        val flac = n % 3 != 0
+        return Track(
+            nextId--, title, artist, album, seconds * 1000L, null, null, nextAdded, lyrics,
+            format = if (flac) "FLAC" else "M4A",
+            bitrateKbps = if (flac) 700 + (n * 37) % 330 else 256 + (n * 13) % 96,
+            sizeBytes = seconds * (if (flac) 110_000L else 40_000L),
+            year = 2015 + n % 10, trackNo = 1 + n % 9, albumArtist = artist,
+        )
     }
 
     private fun l(text: String, translation: String? = null, at: Int) = LyricLine(at * 1000L, text, translation)

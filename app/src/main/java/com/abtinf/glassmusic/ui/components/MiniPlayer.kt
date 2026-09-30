@@ -38,22 +38,22 @@ fun MiniPlayer(
     modifier: Modifier = Modifier,
 ) {
     val am = LocalAm.current
-    val shape = RoundedCornerShape(32.dp)
+    val shape = RoundedCornerShape(30.dp)
     Row(
         modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .glass(shape, am.glass, elevation = 10.dp)
+            .height(60.dp)
+            .glass(shape, am.glass, elevation = 8.dp)
             .clickable(onClick = onExpand)
             .padding(start = 8.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Artwork(track, Modifier.size(48.dp), corner = 24.dp)
+        Artwork(track, Modifier.size(44.dp), corner = 8.dp)
         Spacer(Modifier.width(12.dp))
         Crossfade(track.id, Modifier.weight(1f), label = "miniText") {
             Column {
-                Text(track.title, style = AmType.Body.copy(fontSize = 15.sp), color = am.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(track.artist, style = AmType.Caption, color = am.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(track.title, style = AmType.Body.copy(fontSize = 14.sp), color = am.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(track.artist, style = AmType.Caption.copy(fontSize = 12.sp), color = am.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         MiniButton(onToggle) {

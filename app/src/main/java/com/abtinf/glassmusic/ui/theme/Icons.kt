@@ -130,4 +130,5 @@ object AmIcons {
     val AddToQueue = icon("addQueue", P("M4 6h14M4 11h14M4 16h8"), P("M17 15v6M14 18h6"))
     val Edit = icon("edit", P("M4 20h4L19 9l-4-4L4 16z"), P("M13.5 6.5l4 4"))
     val Shuffle2 = Shuffle
+    val Filter = icon("filter", P("M4 7h16M7 12h10M10 17h4"))
 }

@@ -28,6 +28,8 @@ import java.util.UUID
 
 data class HomeState(
     val picks: List<HomePick> = emptyList(),
+    val hotArtists: List<Artist> = emptyList(),
+    val hotSongs: List<Track> = emptyList(),
     val recentlyPlayed: List<Track> = emptyList(),
     val recentlyAdded: List<Album> = emptyList(),
     val playlists: List<Playlist> = emptyList(),
@@ -141,7 +143,10 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
         }
         val favTracks = favs.mapNotNull { lib.trackById[it] }
         if (favTracks.isNotEmpty()) picks += HomePick.Favorites(favTracks)
-        return HomeState(picks, recent, lib.recentlyAddedAlbums.take(10), pls)
+        pls.forEach { p -> picks += HomePick.UserPlaylist(p, p.trackIds.mapNotNull { lib.trackById[it] }) }
+        val artistScore = lib.artists.associateWith { a -> a.tracks.sumOf { (plays[it.id] ?: 0) } }
+        val hotArtists = lib.artists.sortedWith(compareByDescending<Artist> { artistScore[it] ?: 0 }.thenByDescending { it.tracks.size })
+        return HomeState(picks, hotArtists.take(12), top.take(12), recent, lib.recentlyAddedAlbums.take(10), pls)
     }
 
     // ---- playback -------------------------------------------------------------------------

@@ -33,13 +33,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.abtinf.glassmusic.ui.MusicViewModel
 import com.abtinf.glassmusic.ui.components.AlbumCard
-import com.abtinf.glassmusic.ui.components.CoverMosaic
-import com.abtinf.glassmusic.ui.components.FeaturedCard
+import com.abtinf.glassmusic.ui.components.ArtistCircle
+import com.abtinf.glassmusic.ui.components.LibrarySongRow
+import com.abtinf.glassmusic.ui.components.PlaylistTile
 import com.abtinf.glassmusic.ui.components.SectionHeader
 import com.abtinf.glassmusic.ui.theme.AmAccent
 import com.abtinf.glassmusic.ui.theme.AmIcons
 import com.abtinf.glassmusic.ui.theme.AmType
 import com.abtinf.glassmusic.ui.theme.LocalAm
+
+private val Tile = 136.dp
 
 @Composable
 fun HomeScreen(
@@ -47,12 +50,15 @@ fun HomeScreen(
     bottomPad: Dp,
     onRequestPermission: () -> Unit,
     onOpenAlbum: (Long) -> Unit,
+    onOpenArtist: (Long) -> Unit,
     onOpenPlaylist: (String) -> Unit,
+    onOpenMetadata: (Long) -> Unit,
     onOpenList: (String) -> Unit,
 ) {
     val am = LocalAm.current
     val home by vm.home.collectAsState()
     val library by vm.library.collectAsState()
+    val player by vm.playerState.collectAsState()
 
     LazyColumn(
         Modifier.fillMaxSize().background(am.background),
@@ -60,55 +66,57 @@ fun HomeScreen(
     ) {
         item {
             Row(
-                Modifier.fillMaxWidth().statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Home", style = AmType.LargeTitle, color = am.text, modifier = Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
                 Avatar(onClick = { vm.setShowSettings(true) })
             }
         }
+        item { Text("Home", style = AmType.LargeTitle, color = am.text, modifier = Modifier.padding(start = 16.dp, top = 28.dp, bottom = 12.dp)) }
         if (!library.hasPermission) {
             item { PermissionBanner(library.isDemo, onRequestPermission) }
         }
-        if (home.picks.isNotEmpty()) {
-            item { SectionHeader("Top Picks for You", Modifier.padding(top = 8.dp)) }
+        if (home.hotArtists.isNotEmpty()) {
+            item { SectionHeader("Hot Artists", Modifier.padding(top = 4.dp)) }
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(home.hotArtists, key = { it.id }) { a -> ArtistCircle(a, Tile, onClick = { onOpenArtist(a.id) }) }
+                }
+            }
+        }
+        if (home.picks.isNotEmpty()) {
+            item { SectionHeader("New Release Playlists", Modifier.padding(top = 28.dp)) }
+            item {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(home.picks, key = { it.key }) { pick ->
-                        FeaturedCard(pick, onClick = { vm.play(pick.tracks, 0) })
+                        PlaylistTile(pick, Tile, onClick = {
+                            if (pick is com.abtinf.glassmusic.ui.components.HomePick.UserPlaylist) onOpenPlaylist(pick.playlist.id)
+                            else if (pick is com.abtinf.glassmusic.ui.components.HomePick.AlbumPick) onOpenAlbum(pick.album.id)
+                            else if (pick is com.abtinf.glassmusic.ui.components.HomePick.ArtistMix) onOpenArtist(pick.artist.id)
+                            else vm.play(pick.tracks, 0)
+                        })
                     }
                 }
             }
         }
-        if (home.recentlyPlayed.isNotEmpty()) {
-            item { SectionHeader("Recently Played", Modifier.padding(top = 24.dp), chevron = true, onClick = { onOpenList("songs") }) }
-            item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(home.recentlyPlayed, key = { it.id }) { t ->
-                        AlbumCard(t.title, t.artist, t, 120.dp, onClick = { vm.play(home.recentlyPlayed, home.recentlyPlayed.indexOf(t)) })
-                    }
-                }
+        if (home.hotSongs.isNotEmpty()) {
+            item { SectionHeader("Hot Songs", Modifier.padding(top = 28.dp), chevron = true, onClick = { onOpenList("songs") }) }
+            items(home.hotSongs, key = { "hot${it.id}" }) { t ->
+                LibrarySongRow(
+                    t, onOpen = { onOpenMetadata(t.id) },
+                    onPlay = { vm.play(home.hotSongs, home.hotSongs.indexOf(t)) },
+                    onLongPress = { vm.showTrackMenu(t) },
+                    isCurrent = player.current?.id == t.id,
+                )
             }
         }
         if (home.recentlyAdded.isNotEmpty()) {
-            item { SectionHeader("Recently Added", Modifier.padding(top = 24.dp), chevron = true, onClick = { onOpenList("albums") }) }
+            item { SectionHeader("Recently Added", Modifier.padding(top = 28.dp), chevron = true, onClick = { onOpenList("albums") }) }
             item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(home.recentlyAdded, key = { it.id }) { a ->
-                        AlbumCard(a.title, a.artist, a.cover, 140.dp, onClick = { onOpenAlbum(a.id) })
-                    }
-                }
-            }
-        }
-        if (home.playlists.isNotEmpty()) {
-            item { SectionHeader("Your Playlists", Modifier.padding(top = 24.dp), chevron = true, onClick = { onOpenList("playlists") }) }
-            item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(home.playlists, key = { it.id }) { p ->
-                        val tracks = vm.resolve(p)
-                        AlbumCard(p.name, "${tracks.size} songs", null, 140.dp, onClick = { onOpenPlaylist(p.id) }, cover2 = {
-                            CoverMosaic(tracks, Modifier.fillMaxSize(), 8.dp, 2.dp)
-                        })
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(home.recentlyAdded, key = { "ra${it.id}" }) { a ->
+                        AlbumCard(a.title, a.artist, a.cover, 140.dp, onClick = { onOpenAlbum(a.id) }, corner = 10.dp)
                     }
                 }
             }
@@ -122,7 +130,7 @@ private fun Avatar(onClick: () -> Unit) {
         Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(Color(0xFFFFB199), Color(0xFFFF0844))))
+            .background(Brush.linearGradient(listOf(Color(0xFF6E6E73), Color(0xFF2C2C2E))))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -135,7 +143,7 @@ private fun PermissionBanner(demo: Boolean, onRequest: () -> Unit) {
     val am = LocalAm.current
     Row(
         Modifier
-            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(am.surface)

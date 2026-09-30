@@ -56,13 +56,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.abtinf.glassmusic.data.MusicRepository
-import com.abtinf.glassmusic.ui.browse.NewScreen
-import com.abtinf.glassmusic.ui.browse.RadioScreen
-import com.abtinf.glassmusic.ui.components.BottomNavigation
+import com.abtinf.glassmusic.ui.browse.RepoScreen
+import com.abtinf.glassmusic.ui.components.AppTabBar
 import com.abtinf.glassmusic.ui.components.LocalBackdrop
 import com.abtinf.glassmusic.ui.components.MiniPlayer
 import com.abtinf.glassmusic.ui.components.Tab
 import com.abtinf.glassmusic.ui.detail.DetailScreen
+import com.abtinf.glassmusic.ui.detail.MetadataScreen
 import com.abtinf.glassmusic.ui.home.HomeScreen
 import com.abtinf.glassmusic.ui.library.LibraryListScreen
 import com.abtinf.glassmusic.ui.library.LibraryScreen
@@ -131,6 +131,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     fun openArtist(id: Long) = nav.navigate("detail/artist/$id")
     fun openPlaylist(id: String) = nav.navigate("detail/playlist/$id")
     fun openList(kind: String) = nav.navigate("list/$kind")
+    fun openMetadata(id: Long) = nav.navigate("meta/$id")
     fun openPlayground(playlistId: String?) {
         vm.openEditor(playlistId?.let { id -> vm.playlists.value.firstOrNull { it.id == id } })
         nav.navigate(PLAYGROUND)
@@ -175,12 +176,13 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
             popExitTransition = { fadeOut(tween(160)) },
         ) {
             composable(Tab.Home.route) {
-                HomeScreen(vm, bottomPad, requestPermission, ::openAlbum, ::openPlaylist, ::openList)
+                HomeScreen(vm, bottomPad, requestPermission, ::openAlbum, ::openArtist, ::openPlaylist, ::openMetadata, ::openList)
             }
-            composable(Tab.New.route) { NewScreen(vm, bottomPad, onOpenPlayground = { openPlayground(null) }, onOpenAlbum = ::openAlbum) }
-            composable(Tab.Radio.route) { RadioScreen(vm, bottomPad) }
+            composable(Tab.Repo.route) {
+                RepoScreen(vm, bottomPad, onOpenPlayground = { openPlayground(null) }, onOpenAlbum = ::openAlbum)
+            }
             composable(Tab.Library.route) {
-                LibraryScreen(vm, bottomPad, ::openList, ::openAlbum, onOpenPlayground = { openPlayground(null) })
+                LibraryScreen(vm, bottomPad, ::openList, ::openAlbum, onOpenSearch = { goTab(Tab.Search) })
             }
             composable(Tab.Search.route) {
                 SearchScreen(vm, bottomPad, ::openAlbum, ::openArtist, ::openPlaylist, ::openList)
@@ -193,7 +195,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                 LibraryListScreen(
                     kind = entry.arguments?.getString("kind").orEmpty(), vm = vm, bottomPad = bottomPad,
                     onBack = { nav.popBackStack() }, onOpenAlbum = ::openAlbum, onOpenArtist = ::openArtist,
-                    onOpenPlaylist = ::openPlaylist, onNewPlaylist = { openPlayground(null) },
+                    onOpenPlaylist = ::openPlaylist, onOpenMetadata = ::openMetadata, onNewPlaylist = { openPlayground(null) },
                 )
             }
             composable(
@@ -206,8 +208,15 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                     kind = entry.arguments?.getString("kind").orEmpty(),
                     id = entry.arguments?.getString("id").orEmpty(),
                     vm = vm, bottomPad = bottomPad, onBack = { nav.popBackStack() },
-                    onOpenAlbum = ::openAlbum, onEditPlaylist = { openPlayground(it) },
+                    onOpenAlbum = ::openAlbum, onEditPlaylist = { openPlayground(it) }, onOpenMetadata = ::openMetadata,
                 )
+            }
+            composable(
+                "meta/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                enterTransition = { slideInHorizontally(tween(300)) { it / 4 } + fadeIn(fade) },
+                popExitTransition = { slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)) },
+            ) { entry ->
+                MetadataScreen(entry.arguments?.getLong("id") ?: 0L, vm, bottomPad, onBack = { nav.popBackStack() })
             }
             composable(
                 PLAYGROUND,
@@ -233,7 +242,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                 Modifier
                     .onSizeChanged { barsHeight = with(density) { it.height.toDp() } }
                     .background(Brush.verticalGradient(listOf(Color.Transparent, am.background.copy(alpha = 0.94f))))
-                    .padding(start = 12.dp, end = 12.dp, top = 24.dp, bottom = 8.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 10.dp)
                     .navigationBarsPadding(),
             ) {
                 val current = ps.current
@@ -245,7 +254,7 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                BottomNavigation(tab, ::goTab)
+                AppTabBar(tab, ::goTab, backdrop)
             }
         }
 
