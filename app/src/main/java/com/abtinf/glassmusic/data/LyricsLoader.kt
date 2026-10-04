@@ -170,7 +170,7 @@ object LyricsLoader {
             if (end + 4 > b.size) break
             val t = be32(b, end).toLong() and 0xFFFFFFFFL
             val line = decode(b, o, textEnd.coerceAtLeast(o), enc).trim('\n', '\r')
-            if (line.isNotBlank()) sb.append(String.format("[%02d:%02d.%02d]%s\n", t / 60000, (t / 1000) % 60, (t % 1000) / 10, line))
+            if (line.isNotBlank()) sb.append(String.format(java.util.Locale.ROOT, "[%02d:%02d.%02d]%s\n", t / 60000, (t / 1000) % 60, (t % 1000) / 10, line))
             o = end + 4
         }
         return sb.toString().ifBlank { null }

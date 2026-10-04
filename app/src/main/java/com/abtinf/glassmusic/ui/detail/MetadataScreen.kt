@@ -126,7 +126,7 @@ fun MetadataScreen(trackId: Long, vm: MusicViewModel, bottomPad: Dp, onBack: () 
                         "Track total" to albumTracks.toString(), "Disc number" to track.discNo.toString(),
                         "Duration" to formatTime(track.durationMs), "Format" to track.format,
                         "Bitrate" to if (track.bitrateKbps > 0) "${track.bitrateKbps} kbps" else "—",
-                        "Size" to if (track.sizeBytes > 0) "%.1f MB".format(track.sizeBytes / 1_048_576.0) else "—",
+                        "Size" to if (track.sizeBytes > 0) "%.1f MB".format(java.util.Locale.US, track.sizeBytes / 1_048_576.0) else "—",
                         "Year" to if (track.year > 0) track.year.toString() else "—", "Date added" to date,
                     )
                     fields.forEachIndexed { i, (k, v) ->

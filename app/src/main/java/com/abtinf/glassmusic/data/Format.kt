@@ -1,8 +1,10 @@
 package com.abtinf.glassmusic.data
 
+import java.util.Locale
+
 fun formatTime(ms: Long): String {
     val total = (ms.coerceAtLeast(0) / 1000).toInt()
-    return "%d:%02d".format(total / 60, total % 60)
+    return "%d:%02d".format(Locale.US, total / 60, total % 60) // ASCII digits whatever the phone's language
 }
 
 fun formatTotal(tracks: List<Track>): String {

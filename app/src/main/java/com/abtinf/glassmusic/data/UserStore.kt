@@ -44,7 +44,8 @@ class UserStore(context: Context) {
             .apply()
     }
 
-    fun savePlaylist(p: Playlist) {
+    fun savePlaylist(playlist: Playlist) {
+        val p = playlist.copy(trackIds = playlist.trackIds.distinct()) // lists key their rows by song id
         _playlists.update { list ->
             if (list.any { it.id == p.id }) list.map { if (it.id == p.id) p else it } else list + p
         }
@@ -112,7 +113,7 @@ class UserStore(context: Context) {
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             val ids = o.getJSONArray("ids")
-            Playlist(o.getString("id"), o.getString("name"), (0 until ids.length()).map { ids.getLong(it) }, o.optLong("created"))
+            Playlist(o.getString("id"), o.getString("name"), (0 until ids.length()).map { ids.getLong(it) }.distinct(), o.optLong("created"))
         }
     }.getOrDefault(emptyList())
 
