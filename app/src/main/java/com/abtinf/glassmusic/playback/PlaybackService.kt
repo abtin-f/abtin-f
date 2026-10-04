@@ -6,11 +6,13 @@ import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
 import androidx.media3.common.Player
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
 import com.abtinf.glassmusic.App
 import com.abtinf.glassmusic.MainActivity
+import com.abtinf.glassmusic.R
 
 /** Hosts the MediaSession (notification + lock-screen + Bluetooth controls) for the app-wide player. */
 class PlaybackService : MediaSessionService() {
@@ -23,6 +25,8 @@ class PlaybackService : MediaSessionService() {
             this, 0, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        // Our own status-bar icon instead of Media3's generic one.
+        setMediaNotificationProvider(DefaultMediaNotificationProvider.Builder(this).build().apply { setSmallIcon(R.drawable.ic_stat_music) })
         session = MediaSession.Builder(this, controller.sessionPlayer)
             .setCallback(SessionCallback(controller))
             .setSessionActivity(open)

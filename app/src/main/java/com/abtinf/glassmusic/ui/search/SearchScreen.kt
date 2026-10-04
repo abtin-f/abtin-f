@@ -73,6 +73,8 @@ fun SearchScreen(
     val focus = LocalFocusManager.current
     val library by vm.library.collectAsState()
     val playlists by vm.playlists.collectAsState()
+    // A fixed-seed shuffle: the same twelve songs every time, computed once per library (not on every keystroke).
+    val discover = androidx.compose.runtime.remember(library.tracks) { library.tracks.shuffled(java.util.Random(7)).take(12) }
 
     LazyColumn(Modifier.fillMaxSize().background(am.background), contentPadding = PaddingValues(bottom = bottomPad)) {
         item {
@@ -122,7 +124,6 @@ fun SearchScreen(
                     row.forEachIndexed { i, t -> BrowseTile(t, i, Modifier.weight(1f)) { onOpenList(t.kind) } }
                 }
             }
-            val discover = library.tracks.shuffled(java.util.Random(7)).take(12)
             if (discover.isNotEmpty()) {
                 item { SectionHeader("Discover", Modifier.padding(top = 20.dp)) }
                 item {
