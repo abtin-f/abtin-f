@@ -137,11 +137,15 @@ object LyricsLoader {
     private fun decode(b: ByteArray, from: Int, to: Int, enc: Int): String {
         val len = (to - from).coerceAtLeast(0)
         if (enc == 0 && len > 0) {
-            // Persian/Arabic tags are often written in Windows-1256 but labelled ISO-8859-1: if most bytes are
-            // "high" bytes it cannot be Western European text, so decode it as Windows-1256.
             var high = 0
             for (i in from until from + len) if (b[i].toInt() < 0) high++
-            if (high * 10 > len * 4) return String(b, from, len, Charset.forName("windows-1256")).trimEnd('\u0000')
+            if (high > 0) {
+                // Many taggers write UTF-8 under the ISO-8859-1 flag; real Latin-1 with accents is almost never valid UTF-8.
+                val utf8 = String(b, from, len, Charsets.UTF_8)
+                if ('\uFFFD' !in utf8) return utf8.trimEnd('\u0000')
+                // Persian/Arabic tags are often Windows-1256 under the same flag: mostly "high" bytes cannot be Western text.
+                if (high * 10 > len * 4) return String(b, from, len, Charset.forName("windows-1256")).trimEnd('\u0000')
+            }
         }
         return String(b, from, len, charsetOf(enc)).trimEnd('\u0000')
     }
