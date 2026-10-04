@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class RepeatMode { OFF, ALL, ONE }
 
@@ -384,6 +385,7 @@ class PlayerController(
                 exo.setMediaItem(mediaItemFor(t))
                 exo.prepare()
                 exo.playWhenReady = autoPlay
+                attachArtLater(t)
             }
         } else if (exoInitialized) {
             needsLoad = false
@@ -404,13 +406,27 @@ class PlayerController(
         exo.setMediaItem(mediaItemFor(t))
         exo.prepare()
         exo.playWhenReady = false
+        attachArtLater(t)
     }
 
+    /** Uses the notification cover only if it is already decoded; decoding it here would stall the UI thread (see [attachArtLater]). */
     private fun mediaItemFor(t: Track): MediaItem {
         val meta = MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).apply {
-            artBytes(t)?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+            artCache.get(t.id)?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
         }.build()
         return MediaItem.Builder().setMediaId(t.id.toString()).setUri(t.uri).setMediaMetadata(meta).build()
+    }
+
+    /**
+     * Decodes the cover for the system notification off the main thread, then slips it into the item that is already
+     * playing. Same URI, so ExoPlayer updates the item in place: no re-buffering, no gap in the audio.
+     */
+    private fun attachArtLater(t: Track) {
+        if (t.artUri == null || artCache.get(t.id) != null || t.id in noArt) return
+        scope.launch {
+            withContext(Dispatchers.IO) { artBytes(t) } ?: return@launch
+            if (exoInitialized && exo.currentMediaItem?.mediaId == t.id.toString()) exo.replaceMediaItem(0, mediaItemFor(t))
+        }
     }
 
     /** Small cover JPEG for the system notification / lock screen; cached because decoding it is not free. */

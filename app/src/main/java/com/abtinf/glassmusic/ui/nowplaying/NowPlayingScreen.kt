@@ -570,12 +570,26 @@ private fun DottedVolume(ctx: Context) {
     val audio = remember { ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     val max = remember { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1) }
     var volume by remember { mutableFloatStateOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()) }
+    var dragging by remember { mutableStateOf(false) }
     var widthPx by remember { mutableIntStateOf(1) }
     fun set(f: Float) { volume = f.coerceIn(0f, 1f); audio.setStreamVolume(AudioManager.STREAM_MUSIC, (volume * max).roundToInt(), 0) }
+    // Follow the hardware volume keys while the sheet is open.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(300)
+            if (!dragging) volume = audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()
+        }
+    }
     Canvas(
         Modifier.fillMaxWidth().height(28.dp).onSizeChanged { widthPx = it.width.coerceAtLeast(1) }
             .pointerInput(Unit) { detectTapGestures { set(it.x / widthPx) } }
-            .pointerInput(Unit) { detectHorizontalDragGestures { change, _ -> change.consume(); set(change.position.x / widthPx) } },
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = { dragging = true },
+                    onDragEnd = { dragging = false },
+                    onDragCancel = { dragging = false },
+                ) { change, _ -> change.consume(); set(change.position.x / widthPx) }
+            },
     ) {
         val h = size.height
         val x = size.width * volume
