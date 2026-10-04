@@ -33,7 +33,8 @@ data class Track(
     // Albums are identified by title + album artist, so a compilation ("Various Artists") stays one album.
     val albumId: Long = albumIdOf(album, albumArtist.ifBlank { artist })
     val artistId: Long = artistIdOf(artist)
-    val seed: Int = album.hashCode() xor (artist.hashCode() * 31)
+    /** Drives the generated placeholder cover; songs without an album tag get their own picture instead of all looking alike. */
+    val seed: Int = (if (album == UNKNOWN_ALBUM) title else album).hashCode() xor (artist.hashCode() * 31)
     /** Lower-cased "title artist album" so searching never allocates per keystroke. */
     val searchKey: String = (title + "\u0001" + artist + "\u0001" + album).lowercase()
     /** Cover cache key: the songs of an album share one decoded picture, but "Unknown Album" is not one album. */
