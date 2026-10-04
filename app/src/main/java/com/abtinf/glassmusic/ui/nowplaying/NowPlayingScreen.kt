@@ -370,17 +370,26 @@ private fun VolumeRow(ctx: Context) {
     val audio = remember { ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     val max = remember { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1) }
     var volume by remember { mutableFloatStateOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()) }
+    var lastStep by remember { mutableIntStateOf(audio.getStreamVolume(AudioManager.STREAM_MUSIC)) }
+    // Follows the hardware volume keys.
     LaunchedEffect(Unit) {
         while (true) {
             delay(800)
-            volume = audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()
+            lastStep = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            volume = lastStep / max.toFloat()
         }
+    }
+    fun setVol(f: Float) {
+        volume = f
+        val step = (f * max).roundToInt()
+        if (step != lastStep) { lastStep = step; audio.setStreamVolume(AudioManager.STREAM_MUSIC, step, 0) }
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(AmIcons.VolumeLow, null, tint = Muted, modifier = Modifier.size(16.dp))
         SeekBar(
             progress = volume,
-            onSeek = { f -> volume = f; audio.setStreamVolume(AudioManager.STREAM_MUSIC, (f * max).roundToInt(), 0) },
+            onSeek = { f -> setVol(f) },
+            onScrub = { f -> setVol(f) },
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
             activeColor = Color.White.copy(alpha = 0.7f), inactiveColor = Color.White.copy(alpha = 0.2f), knob = false,
         )

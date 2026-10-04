@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -33,7 +34,10 @@ fun SeekBar(
     activeColor: Color = Color.White.copy(alpha = 0.92f),
     inactiveColor: Color = Color.White.copy(alpha = 0.25f),
     knob: Boolean = true,
+    /** Called continuously while the finger moves (the volume bar follows it live); [onSeek] fires once on release. */
+    onScrub: ((Float) -> Unit)? = null,
 ) {
+    val scrub by rememberUpdatedState(onScrub)
     var dragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(0f) }
     var widthPx by remember { mutableIntStateOf(1) }
@@ -60,12 +64,13 @@ fun SeekBar(
             }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { o -> dragging = true; dragValue = (o.x / widthPx).coerceIn(0f, 1f) },
+                    onDragStart = { o -> dragging = true; dragValue = (o.x / widthPx).coerceIn(0f, 1f); scrub?.invoke(dragValue) },
                     onDragEnd = { holding = true; onSeek(dragValue); dragging = false },
                     onDragCancel = { dragging = false },
                     onHorizontalDrag = { change, dx ->
                         change.consume()
                         dragValue = (dragValue + dx / widthPx).coerceIn(0f, 1f)
+                        scrub?.invoke(dragValue)
                     },
                 )
             },
