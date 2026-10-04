@@ -4,8 +4,11 @@
 * GlassTest{A..D}.wav   plain 60 s tones, no tags (title comes from the file name)
 * CoverOne.mp3 / CoverTwo.mp3   silent 60 s MP3s with ID3 tags: title / artist / album, a 1000x1000 PNG cover and
   (CoverOne) embedded unsynced lyrics; CoverTwo gets a synced sidecar CoverTwo.lrc instead.
+* CoverThree.mp3   like CoverOne but its lyrics are Persian text in the legacy Windows-1256 code page (ISO-8859-1 flag)
+* AaFlac.flac / AbM4a.m4a   (only when ffmpeg is installed) lyrics in a FLAC Vorbis comment (synced + Persian line)
+  and in an M4A (c)lyr atom (plain)
 """
-import math, struct, sys, wave, zlib
+import math, shutil, struct, subprocess, sys, wave, zlib
 
 out = sys.argv[1]
 RATE = 22050
@@ -71,3 +74,27 @@ open(f"{out}/CoverTwo.mp3", "wb").write(id3("CoverTwo", "Cover Artist", "Cover A
 open(f"{out}/CoverTwo.lrc", "w").write(
     "[ar:Cover Artist]\n[ti:CoverTwo]\n[00:01.00]Synced line one\n[00:04.00]Synced line two\n[00:07.00]Synced line three\n[00:10.00]Synced line four\n"
 )
+
+# Persian lyrics saved the old way: Windows-1256 bytes under the "ISO-8859-1" encoding flag of an ID3v2.3 USLT frame
+persian = "\u0633\u0644\u0627\u0645 \u062f\u0646\u064a\u0627 \u067e\u0686\u0698\u06af\n\u062e\u062f\u0627\u062d\u0627\u0641\u0638 \u062f\u0646\u064a\u0627"
+tag = text(b"TIT2", "CoverThree") + text(b"TPE1", "Cover Artist") + text(b"TALB", "Cover Album") + text(b"TRCK", "3")
+tag += frame(b"APIC", b"\x00image/png\x00\x03\x00" + cover)
+tag += frame(b"USLT", b"\x00fas\x00" + persian.encode("cp1256"))
+size = len(tag)
+hdr = b"ID3\x03\x00\x00" + bytes(((size >> 21) & 0x7F, (size >> 14) & 0x7F, (size >> 7) & 0x7F, size & 0x7F))
+open(f"{out}/CoverThree.mp3", "wb").write(hdr + tag + audio)
+
+# FLAC / M4A need a real encoder
+if shutil.which("ffmpeg"):
+    def encode(path, args):
+        r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=500:duration=60",
+                            "-ar", "22050", "-ac", "1", *args, path], capture_output=True, text=True)
+        if r.returncode != 0:
+            print("ffmpeg failed for", path, r.stderr, file=sys.stderr)
+    flac_lyrics = ("[00:01.00]Flac synced one\n[00:04.00]Flac synced two\n[00:07.00]Flac synced three\n"
+                   "[00:10.00]\u0633\u0644\u0627\u0645 \u062f\u0646\u06cc\u0627\n")
+    encode(f"{out}/AaFlac.flac", ["-metadata", "title=AaFlac", "-metadata", "artist=Format Artist", "-metadata", "album=Format Album",
+                                  "-metadata", "tracknumber=1", "-metadata", "LYRICS=" + flac_lyrics])
+    encode(f"{out}/AbM4a.m4a", ["-c:a", "aac", "-metadata", "title=AbM4a", "-metadata", "artist=Format Artist",
+                                "-metadata", "album=Format Album", "-metadata", "track=2",
+                                "-metadata", "lyrics=M4A plain line one\nM4A plain line two\nM4A plain line three"])

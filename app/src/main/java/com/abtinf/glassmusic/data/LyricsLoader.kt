@@ -50,8 +50,30 @@ object LyricsLoader {
         if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte()) return String(bytes, 2, bytes.size - 2, Charsets.UTF_16LE)
         if (bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte()) return String(bytes, 2, bytes.size - 2, Charsets.UTF_16BE)
         val utf8 = String(bytes, Charsets.UTF_8)
-        return if ('�' in utf8) String(bytes, Charset.forName("windows-1256")) else utf8
+        return if ('\uFFFD' in utf8) legacyText(bytes, 0, bytes.size) else utf8
     }
+
+    /**
+     * Text that is not valid UTF-8. More accented ("high") bytes than plain Latin letters cannot be Western text (digits and
+     * timestamps do not count), so it is a Persian/Arabic code page: Windows-1256. Otherwise Western Windows-1252.
+     */
+    private fun legacyText(b: ByteArray, from: Int, len: Int): String {
+        var high = 0
+        var latin = 0
+        for (i in from until from + len) {
+            val v = b[i].toInt()
+            if (v < 0) high++ else if ((v or 0x20) in 'a'.code..'z'.code) latin++
+        }
+        return if (high > latin) persianize(String(b, from, len, Charset.forName("windows-1256")))
+        else String(b, from, len, Charset.forName("windows-1252"))
+    }
+
+    /**
+     * Windows-1256 has no Farsi yeh / keheh, so Persian text saved in it carries the Arabic letters instead. When the text is
+     * clearly Persian (it contains a letter only Persian uses: pe, che, zhe, gaf) the Persian forms are put back.
+     */
+    private fun persianize(s: String): String =
+        if (s.any { it == '\u067E' || it == '\u0686' || it == '\u0698' || it == '\u06AF' }) s.replace('\u064A', '\u06CC').replace('\u0643', '\u06A9') else s
 
     private fun embedded(context: Context, track: Track): List<LyricLine>? {
         val pfd = context.contentResolver.openFileDescriptor(Uri.parse(track.uri), "r") ?: return null
@@ -143,8 +165,7 @@ object LyricsLoader {
                 // Many taggers write UTF-8 under the ISO-8859-1 flag; real Latin-1 with accents is almost never valid UTF-8.
                 val utf8 = String(b, from, len, Charsets.UTF_8)
                 if ('\uFFFD' !in utf8) return utf8.trimEnd('\u0000')
-                // Persian/Arabic tags are often Windows-1256 under the same flag: mostly "high" bytes cannot be Western text.
-                if (high * 10 > len * 4) return String(b, from, len, Charset.forName("windows-1256")).trimEnd('\u0000')
+                return legacyText(b, from, len).trimEnd('\u0000')
             }
         }
         return String(b, from, len, charsetOf(enc)).trimEnd('\u0000')

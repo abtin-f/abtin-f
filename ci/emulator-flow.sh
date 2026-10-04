@@ -75,10 +75,11 @@ for f in /tmp/music/*; do
   adb push "$f" /sdcard/Music/GlassTest/ > /dev/null
   adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Music/GlassTest/$(basename "$f")" > /dev/null
 done
-# wait until the scanner has indexed all six songs
-for i in $(seq 1 30); do
+# wait until the scanner has indexed every song
+EXPECTED=$(ls /tmp/music | grep -Ec '\.(wav|mp3|flac|m4a)$')
+for i in $(seq 1 40); do
   adb shell content query --uri content://media/external/audio/media --projection _id:title:is_music:duration > out/mediastore.txt 2>&1
-  [ "$(grep -c 'Row:' out/mediastore.txt)" -ge 6 ] && break
+  [ "$(grep -c 'Row:' out/mediastore.txt)" -ge "$EXPECTED" ] && break
   sleep 3
 done
 # lets the app read the .lrc file that sits next to a song
@@ -119,12 +120,28 @@ adb shell input tap 400 2040; sleep 3; shot cover_player
 adb shell input tap 184 2246; sleep 3; shot cover_lyrics_embedded
 adb shell input keyevent 87; sleep 4; shot cover_lyrics_sidecar_next
 sleep 6; shot cover_lyrics_sidecar_later
+# CoverThree: Persian lyrics stored in the legacy Windows-1256 code page
+adb shell input keyevent 87; sleep 4; shot cover_lyrics_windows1256
 # the notification cover is attached a moment after the song starts (decoded off the main thread): the shade card must show it
 adb shell cmd statusbar expand-notifications; sleep 3; shot shade_with_cover
 adb shell cmd statusbar collapse; sleep 1
 back; sleep 2
 tap "Folders"; shot cover_folders
 tap "GlassTest"; shot cover_folder_detail
+
+# --- F: lyrics inside a FLAC (Vorbis comment: synced + a Persian line) and an M4A ((c)lyr atom) ----------------
+if [ -f /tmp/music/AaFlac.flac ]; then
+  fresh
+  tap "Library"; tap "Songs"; shot format_songs
+  tap "AaFlac"; tap "Play" 0 4
+  adb shell input tap 400 2040; sleep 3
+  adb shell input tap 184 2246; sleep 8; shot flac_lyrics
+  back; sleep 2
+  back; sleep 1.5
+  tap "AbM4a"; tap "Play" 0 4
+  adb shell input tap 400 2040; sleep 3
+  adb shell input tap 184 2246; sleep 4; shot m4a_lyrics
+fi
 adb logcat -d | grep -iE "AndroidRuntime|FATAL|ANR in" | head -20 > out/errors.txt
 
 adb logcat -d -b crash > out/crash.txt

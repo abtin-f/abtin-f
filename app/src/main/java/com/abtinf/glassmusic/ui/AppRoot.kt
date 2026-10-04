@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -84,6 +86,7 @@ import com.abtinf.glassmusic.ui.theme.LocalAm
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private const val PLAYGROUND = "playground"
 
@@ -293,24 +296,29 @@ private fun BoxWithConstraintsScope.PlayerChrome(
     // the screen behind it has a back stack that the NavHost would otherwise pop.
     BackHandler(enabled = expanded) { settle(false) }
 
-    val dragModifier = Modifier.pointerInput(Unit) {
+    // The drag position is tracked in a plain variable: the Animatable is only updated by queued coroutines, so on a busy frame
+    // (several events delivered together, e.g. a quick flick) reading it at the end of the drag would still show the old value
+    // and the sheet would spring back to where it was.
+    fun dragger(threshold: Float) = Modifier.pointerInput(heightPx) {
+        var progress = 0f
+        val tracker = VelocityTracker()
         detectVerticalDragGestures(
-            onDragEnd = { settle(expand.value > 0.65f) },
-            onDragCancel = { settle(expand.value > 0.65f) },
+            onDragStart = { progress = expand.value; tracker.resetTracking() },
+            // A quick flick decides on its own (down closes, up opens); a slow drag settles on the nearer side.
+            onDragEnd = {
+                val vy = tracker.calculateVelocity().y
+                settle(if (abs(vy) > 1_000f) vy < 0f else progress > threshold)
+            },
+            onDragCancel = { settle(progress > threshold) },
         ) { change, dy ->
+            tracker.addPointerInputChange(change)
             change.consume()
-            scope.launch { expand.snapTo((expand.value - dy / heightPx).coerceIn(0f, 1f)) }
+            progress = (progress - dy / heightPx).coerceIn(0f, 1f)
+            scope.launch { expand.snapTo(progress) }
         }
     }
-    val miniDragModifier = Modifier.pointerInput(Unit) {
-        detectVerticalDragGestures(
-            onDragEnd = { settle(expand.value > 0.3f) },
-            onDragCancel = { settle(expand.value > 0.3f) },
-        ) { change, dy ->
-            change.consume()
-            scope.launch { expand.snapTo((expand.value - dy / heightPx).coerceIn(0f, 1f)) }
-        }
-    }
+    val dragModifier = dragger(0.65f)
+    val miniDragModifier = dragger(0.3f)
 
     AnimatedVisibility(
         visible = showBars,
