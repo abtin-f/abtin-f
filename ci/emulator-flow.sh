@@ -68,12 +68,18 @@ adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed
 # --- D: real songs + system media controls (notification / media keys) ---------------------------
 mkdir -p /tmp/music && python3 ci/make_audio.py /tmp/music
 adb shell mkdir -p /sdcard/Music/GlassTest
-for f in /tmp/music/*.wav; do
+for f in /tmp/music/*; do
   adb push "$f" /sdcard/Music/GlassTest/ > /dev/null
   adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Music/GlassTest/$(basename "$f")" > /dev/null
 done
-sleep 8
-adb shell content query --uri content://media/external/audio/media --projection _id:title:is_music:duration > out/mediastore.txt 2>&1
+# wait until the scanner has indexed all six songs
+for i in $(seq 1 30); do
+  adb shell content query --uri content://media/external/audio/media --projection _id:title:is_music:duration > out/mediastore.txt 2>&1
+  [ "$(grep -c 'Row:' out/mediastore.txt)" -ge 6 ] && break
+  sleep 3
+done
+# lets the app read the .lrc file that sits next to a song
+adb shell appops set com.abtinf.glassmusic MANAGE_EXTERNAL_STORAGE allow
 adb logcat -c
 fresh
 shot real_home
@@ -91,12 +97,29 @@ adb shell input keyevent 87; sleep 2; ms 3_next_again
 adb shell input keyevent 87; sleep 2; ms 4_next_again
 adb shell input keyevent 85; sleep 2; ms 5_after_playpause
 adb shell input keyevent 85; sleep 2; ms 6_after_playpause2
+# the notification-shade media card uses the framework transport controls (a different route than media keys)
 adb shell cmd statusbar expand-notifications; sleep 3; shot shade
-adb shell uiautomator dump /sdcard/shade.xml > /dev/null 2>&1; adb pull /sdcard/shade.xml out/shade_ui.xml > /dev/null 2>&1
-python3 ci/tap.py "Next track" | tee -a out/taps.txt; sleep 3; shot shade_after_next_tap; ms 7_after_shade_next
-python3 ci/tap.py "Previous track" | tee -a out/taps.txt; sleep 2; ms 8_after_shade_prev
-adb logcat -d | grep -iE "media3|MediaSession|PlayerController|glassmusic|AndroidRuntime|GlassSession|GlassPlayer" | tail -400 > out/media_log.txt
-adb shell cmd statusbar collapse
+adb shell input tap 974 903; sleep 2; ms 7_shade_next
+adb shell input tap 104 903; sleep 2; ms 8_shade_prev
+adb shell input tap 974 903; sleep 2; ms 9_shade_next_again
+shot shade_after_taps
+adb shell cmd statusbar collapse; sleep 1
+adb logcat -d -s GlassSession:I GlassPlayer:I > out/media_log.txt
+adb logcat -d | grep "Sending KeyEvent" | cut -c1-200 >> out/media_log.txt
+
+# --- E: embedded cover art, embedded lyrics, synced sidecar lyrics, folders ---------------------------
+fresh
+tap "Library"; tap "Songs"; shot cover_songs
+tap "CoverOne"; shot cover_metadata
+tap "Play" 0 4
+adb shell input tap 400 2040; sleep 3; shot cover_player
+adb shell input tap 184 2246; sleep 3; shot cover_lyrics_embedded
+adb shell input keyevent 87; sleep 4; shot cover_lyrics_sidecar_next
+sleep 6; shot cover_lyrics_sidecar_later
+adb shell input swipe 540 160 540 1800 300; sleep 2
+tap "Folders"; shot cover_folders
+tap "GlassTest"; shot cover_folder_detail
+adb logcat -d | grep -iE "AndroidRuntime|FATAL|ANR in" | head -20 > out/errors.txt
 
 adb logcat -d -b crash > out/crash.txt
 adb logcat -d -s AndroidRuntime:E ActivityManager:I > out/runtime.txt
