@@ -1,0 +1,46 @@
+--------- beginning of main
+10-04 17:28:43.557   522  2352 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+--------- beginning of system
+10-04 17:28:43.558   522  2352 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+10-04 17:28:43.565   522   539 I ActivityManager: Broadcast completed: result=0
+10-04 17:28:43.590   522  2352 I ActivityManager: Force stopping com.abtinf.glassmusic appid=10192 user=0: from pid 7317
+10-04 17:28:43.592   522  2352 I ActivityManager: Killing 6902:com.abtinf.glassmusic/u0a192 (adj 0): stop com.abtinf.glassmusic due to from pid 7317
+10-04 17:28:43.851   522   544 W ActivityManager: setHasOverlayUi called on unknown pid: 6902
+10-04 17:28:44.718   522   553 I ActivityManager: Start proc 7333:com.abtinf.glassmusic/u0a192 for next-top-activity {com.abtinf.glassmusic/com.abtinf.glassmusic.MainActivity}
+10-04 17:28:45.100   522   535 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 7333
+10-04 17:28:55.449   522  1936 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:28:59.575   522  1936 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:29:04.028   522  1936 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:29:08.534   522  2288 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:29:10.268   522  2352 I ActivityManager: Background started FGS: Allowed [callingPackage: com.abtinf.glassmusic; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=androidx.media3.session.MediaSessionService cmp=com.abtinf.glassmusic/.playback.PlaybackService }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0; bindFromPackage:null: isBindService:true]
+10-04 17:29:27.934   522  2352 I ActivityManager: Background started FGS: Allowed [callingPackage: com.abtinf.glassmusic; callingUid: 10192; uidState: SVC ; uidBFSL: n/a; intent: Intent { cmp=com.abtinf.glassmusic/.playback.PlaybackService }; code:TEMP_ALLOWED_WHILE_IN_USE; tempAllowListReason:<action=ACTION_UP;code=KEYCODE_MEDIA_PLAY_PAUSE,reasonCode:MEDIA_SESSION_CALLBACK,duration:10000,callingUid:1000>; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:1; bindFromPackage:null: isBindService:false]
+10-04 17:29:43.173   522  2408 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+10-04 17:29:43.173   522  2408 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+10-04 17:29:43.176   522   539 I ActivityManager: Broadcast completed: result=0
+10-04 17:29:43.197   522  2408 I ActivityManager: Force stopping com.abtinf.glassmusic appid=10192 user=0: from pid 7706
+10-04 17:29:43.199   522  2408 I ActivityManager: Killing 7333:com.abtinf.glassmusic/u0a192 (adj 200): stop com.abtinf.glassmusic due to from pid 7706
+10-04 17:29:43.252   522   544 W ActivityManager: setHasOverlayUi called on unknown pid: 7333
+10-04 17:29:44.250   522   553 I ActivityManager: Start proc 7714:com.abtinf.glassmusic/u0a192 for next-top-activity {com.abtinf.glassmusic/com.abtinf.glassmusic.MainActivity}
+10-04 17:29:44.636   522  2449 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 7714
+10-04 17:29:54.557   522  2288 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:29:58.642   522  2408 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:30:03.117   522  2408 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:30:08.078   522   599 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:30:09.842   522   822 I ActivityManager: Background started FGS: Allowed [callingPackage: com.abtinf.glassmusic; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=androidx.media3.session.MediaSessionService cmp=com.abtinf.glassmusic/.playback.PlaybackService }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0; bindFromPackage:null: isBindService:true]
+10-04 17:30:47.903   522   599 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:30:52.235   522  2257 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:30:55.604   522  2408 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+10-04 17:30:55.605   522  2408 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+10-04 17:30:55.608   522   539 I ActivityManager: Broadcast completed: result=0
+10-04 17:30:55.628   522  2408 I ActivityManager: Force stopping com.abtinf.glassmusic appid=10192 user=0: from pid 8175
+10-04 17:30:55.630   522  2408 I ActivityManager: Killing 7714:com.abtinf.glassmusic/u0a192 (adj 0): stop com.abtinf.glassmusic due to from pid 8175
+10-04 17:30:56.009   522   544 W ActivityManager: setHasOverlayUi called on unknown pid: 7714
+10-04 17:30:56.756   522   553 I ActivityManager: Start proc 8189:com.abtinf.glassmusic/u0a192 for next-top-activity {com.abtinf.glassmusic/com.abtinf.glassmusic.MainActivity}
+10-04 17:30:57.066   522  1825 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 8189
+10-04 17:31:07.096   522   536 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:31:11.189   522   986 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:31:15.625   522  2408 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:31:19.700   522  2443 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:31:21.230   522  1825 I ActivityManager: Background started FGS: Allowed [callingPackage: com.abtinf.glassmusic; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { act=androidx.media3.session.MediaSessionService cmp=com.abtinf.glassmusic/.playback.PlaybackService }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0; bindFromPackage:null: isBindService:true]
+10-04 17:31:44.012   522   536 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+10-04 17:31:48.085   522   599 W ActivityManager: Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found

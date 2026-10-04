@@ -1,0 +1,5 @@
+--------- beginning of main
+10-04 17:28:26.236  6902  6902 D GlassUI : sheet drag start at 1.0
+10-04 17:28:27.084  6902  6902 D GlassUI : sheet drag end progress=0.5515585 vy=0.0 -> open=false
+10-04 17:28:29.986  6902  6902 D GlassUI : sheet drag start at 0.0
+10-04 17:28:30.532  6902  6902 D GlassUI : sheet drag end progress=0.5194332 vy=0.0 -> open=true

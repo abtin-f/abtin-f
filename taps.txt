@@ -1,0 +1,35 @@
+tapped 'Tame Impala' at 221,973
+tapped 'Library' at 421,2263
+tapped 'Playlists' at 569,540
+tapped 'Artists' at 569,701
+tapped 'Albums' at 569,862
+tapped 'Folders' at 659,2263
+tapped 'Search' at 897,2263
+tapped 'Library' at 421,2263
+tapped 'Home' at 183,2263
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'Filters' at 563,668
+tapped 'Create playlist' at 882,668
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'Bad Decisions' at 361,809
+tapped 'Play' at 320,1645
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'GlassTestA' at 330,1879
+tapped 'Play' at 320,1645
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'CoverOne' at 321,1237
+tapped 'Play' at 320,1645
+tapped 'Folders' at 659,2263
+tapped 'GlassTest' at 311,503
+tapped 'Library' at 421,2263
+tapped 'Songs' at 569,1023
+tapped 'AaFlac' at 289,809
+tapped 'Play' at 320,1645
+tapped 'AbM4a' at 293,1023
+tapped 'Play' at 320,1645

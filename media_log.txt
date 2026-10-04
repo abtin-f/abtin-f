@@ -1,0 +1,31 @@
+--------- beginning of main
+10-04 17:29:18.366  7333  7333 I GlassSession: media button key=87 action=0 from=android
+10-04 17:29:18.367  7333  7333 I GlassPlayer: next() queue=4 index=0
+10-04 17:29:20.416  7333  7333 I GlassSession: media button key=88 action=0 from=android
+10-04 17:29:20.416  7333  7333 I GlassPlayer: previous() queue=4 index=1
+10-04 17:29:21.474  7333  7333 I GlassSession: media button key=87 action=0 from=android
+10-04 17:29:21.474  7333  7333 I GlassPlayer: next() queue=4 index=0
+10-04 17:29:23.527  7333  7333 I GlassSession: media button key=87 action=0 from=android
+10-04 17:29:23.527  7333  7333 I GlassPlayer: next() queue=4 index=1
+10-04 17:29:25.574  7333  7333 I GlassSession: media button key=85 action=0 from=android
+10-04 17:29:25.875  7333  7333 I GlassSession: player command=1 from=android
+10-04 17:29:27.623  7333  7333 I GlassSession: media button key=85 action=0 from=android
+10-04 17:29:27.923  7333  7333 I GlassSession: player command=1 from=android
+10-04 17:29:34.122  7333  7333 I GlassSession: player command=9 from=com.abtinf.glassmusic
+10-04 17:29:34.122  7333  7333 I GlassPlayer: next() queue=4 index=2
+10-04 17:29:36.572  7333  7333 I GlassSession: player command=7 from=com.abtinf.glassmusic
+10-04 17:29:36.572  7333  7333 I GlassPlayer: previous() queue=4 index=3
+10-04 17:29:38.849  7333  7333 I GlassSession: player command=9 from=com.abtinf.glassmusic
+10-04 17:29:38.849  7333  7333 I GlassPlayer: next() queue=4 index=2
+10-04 17:29:18.365   522  2445 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=347772000000, down
+10-04 17:29:18.368   522  2445 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=347772000000, downTi
+10-04 17:29:20.415   522  2445 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_PREVIOUS, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=349823000000, 
+10-04 17:29:20.417   522   535 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_PREVIOUS, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=349823000000, do
+10-04 17:29:21.473   522  2445 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=350882000000, down
+10-04 17:29:21.477   522  2330 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=350882000000, downTi
+10-04 17:29:23.526   522  2288 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=352934000000, down
+10-04 17:29:23.528   522  2445 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_NEXT, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=352934000000, downTi
+10-04 17:29:25.573   522  2352 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_PLAY_PAUSE, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=354981000000
+10-04 17:29:25.573   522  2352 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_PLAY_PAUSE, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=354981000000, 
+10-04 17:29:27.621   522  2352 D MediaSessionService: Sending KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_MEDIA_PLAY_PAUSE, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=357029000000
+10-04 17:29:27.622   522  2352 D MediaSessionService: Sending KeyEvent { action=ACTION_UP, keyCode=KEYCODE_MEDIA_PLAY_PAUSE, scanCode=0, metaState=0, flags=0x0, repeatCount=0, eventTime=357029000000, 

@@ -1,0 +1,10 @@
+0_playing | description=GlassTestA | state=PlaybackState {state=PLAYING(3), position=6602, buffered position=60000, speed=1.0, updated=345667, actions=734003
+1_after_next | description=GlassTestB | state=PlaybackState {state=PLAYING(3), position=0, buffered position=59900, speed=1.0, updated=347840, actions=7340031, 
+2_after_prev_quick | description=GlassTestA | state=PlaybackState {state=PLAYING(3), position=0, buffered position=59900, speed=1.0, updated=349888, actions=7340031, 
+3_next_again | description=GlassTestB | state=PlaybackState {state=PLAYING(3), position=0, buffered position=60000, speed=1.0, updated=350932, actions=7340031, 
+4_next_again | description=GlassTestC | state=PlaybackState {state=PLAYING(3), position=0, buffered position=47500, speed=1.0, updated=352994, actions=7340031, 
+5_after_playpause | description=GlassTestC | state=PlaybackState {state=PAUSED(2), position=2213, buffered position=60000, speed=0.0, updated=355286, actions=7340031
+6_after_playpause2 | description=GlassTestC | state=PlaybackState {state=PLAYING(3), position=2219, buffered position=60000, speed=1.0, updated=357337, actions=734003
+7_shade_next | description=GlassTestD | state=PlaybackState {state=PLAYING(3), position=0, buffered position=59900, speed=1.0, updated=363782, actions=7340031, 
+8_shade_prev | description=GlassTestC | state=PlaybackState {state=PLAYING(3), position=0, buffered position=23700, speed=1.0, updated=366233, actions=7340031, 
+9_shade_next_again | description=GlassTestD | state=PlaybackState {state=PLAYING(3), position=0, buffered position=47500, speed=1.0, updated=368473, actions=7340031, 
