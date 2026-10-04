@@ -1,0 +1,9 @@
+# Baseline profile: ahead-of-time compile everything on the hot paths (startup, scrolling, player, glass).
+HSPLcom/abtinf/glassmusic/**;->**(**)**
+Lcom/abtinf/glassmusic/**;
+HSPLcom/kyant/**;->**(**)**
+Lcom/kyant/**;
+HSPLandroidx/media3/**;->**(**)**
+Landroidx/media3/**;
+HSPLcoil/**;->**(**)**
+Lcoil/**;

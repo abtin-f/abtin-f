@@ -1,0 +1,6 @@
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+-keep class com.abtinf.glassmusic.data.AudioArt { *; }
+-keep class com.kyant.backdrop.** { *; }
+-keep class com.kyant.shapes.** { *; }
+-dontwarn org.jetbrains.annotations.**
