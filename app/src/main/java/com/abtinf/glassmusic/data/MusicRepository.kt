@@ -33,8 +33,14 @@ class MusicRepository(private val context: Context) {
 
     suspend fun refresh() = withContext(Dispatchers.IO) {
         val granted = hasAudioPermission()
-        val real = if (granted) MediaStoreSource.load(context) else emptyList()
+        var real = if (granted) MediaStoreSource.load(context) else emptyList()
         val current = _library.value
+        if (granted && real.isEmpty() && current.loaded && !current.isDemo) {
+            // A real library does not vanish: MediaStore can answer "nothing" for a moment while it re-indexes. Ask once more
+            // before swapping the user's songs for the sample library.
+            delay(1_500)
+            real = MediaStoreSource.load(context)
+        }
         // Nothing changed on the device: keep the same Library so no screen has to recompose.
         if (real.isNotEmpty() && current.loaded && !current.isDemo && current.hasPermission && current.tracks == real) return@withContext
         _library.value = if (real.isNotEmpty()) Library.build(real, isDemo = false, hasPermission = true)

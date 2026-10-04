@@ -92,7 +92,7 @@ fun SearchScreen(
                 Icon(AmIcons.Search, null, tint = am.secondary, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f)) {
-                    if (query.isEmpty()) Text("Songs, Artists, Albums, Lyrics", style = AmType.Body.copy(fontSize = 16.sp), color = am.secondary)
+                    if (query.isEmpty()) Text(if (library.isDemo) "Songs, Artists, Albums, Lyrics" else "Songs, Artists, Albums", style = AmType.Body.copy(fontSize = 16.sp), color = am.secondary)
                     BasicTextField(
                         value = query, onValueChange = { vm.query.value = it }, singleLine = true,
                         textStyle = AmType.Body.copy(fontSize = 16.sp, color = am.text),
