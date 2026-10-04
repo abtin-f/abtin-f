@@ -24,7 +24,8 @@ jobs:
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/app-release.apk
       - name: Publish APK as a GitHub release
-        # Creating a release is sometimes refused for a moment (HTTP 403 on the releases endpoint): retry instead of failing the run
+        id: release
+        # Creating a release is sometimes refused (HTTP 403 on the releases endpoint): retry instead of failing the run
         # (the emulator job below must still get to run).
         continue-on-error: true
         env:
@@ -47,6 +48,15 @@ jobs:
           done
           echo "::warning::could not publish the release for $tag"
           exit 1
+      - name: Fallback - put the APK on a branch when the release could not be created
+        if: steps.release.outcome == 'failure'
+        run: |
+          mkdir -p apkpub && cp GlassMusic.apk GlassMusic-debug.apk apkpub/
+          echo "build ${{ github.run_number }} from ${{ github.sha }}" > apkpub/BUILD.txt
+          cd apkpub && git init -q && git checkout -q -b apk-latest && git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "APK for build ${{ github.run_number }} (${{ github.sha }})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk-latest
+          echo "APK: https://github.com/${{ github.repository }}/raw/apk-latest/GlassMusic.apk"
 
   emulator-test:
     needs: build
