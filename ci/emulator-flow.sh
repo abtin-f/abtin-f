@@ -119,6 +119,9 @@ adb shell input tap 400 2040; sleep 3; shot cover_player
 adb shell input tap 184 2246; sleep 3; shot cover_lyrics_embedded
 adb shell input keyevent 87; sleep 4; shot cover_lyrics_sidecar_next
 sleep 6; shot cover_lyrics_sidecar_later
+# the notification cover is attached a moment after the song starts (decoded off the main thread): the shade card must show it
+adb shell cmd statusbar expand-notifications; sleep 3; shot shade_with_cover
+adb shell cmd statusbar collapse; sleep 1
 back; sleep 2
 tap "Folders"; shot cover_folders
 tap "GlassTest"; shot cover_folder_detail
