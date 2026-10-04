@@ -27,7 +27,8 @@ data class Track(
     val path: String? = null,
 ) {
     // Computed once per track: grouping and sorting read these thousands of times.
-    val albumId: Long = albumIdOf(album, artist)
+    // Albums are identified by title + album artist, so a compilation ("Various Artists") stays one album.
+    val albumId: Long = albumIdOf(album, albumArtist.ifBlank { artist })
     val artistId: Long = artistIdOf(artist)
     val seed: Int = album.hashCode() xor (artist.hashCode() * 31)
     /** Lower-cased "title artist album" so searching never allocates per keystroke. */
@@ -88,7 +89,7 @@ data class Library(
         fun build(tracks: List<Track>, isDemo: Boolean, hasPermission: Boolean): Library {
             val albums = tracks.groupBy { it.albumId }.map { (id, list) ->
                 Album(
-                    id, list.first().album, list.first().artist,
+                    id, list.first().album, list.first().albumArtist.ifBlank { list.first().artist },
                     // Album order: disc, track number (unnumbered last), then title.
                     list.sortedWith(compareBy<Track>({ it.discNo }, { if (it.trackNo > 0) it.trackNo else Int.MAX_VALUE }).thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
                 )

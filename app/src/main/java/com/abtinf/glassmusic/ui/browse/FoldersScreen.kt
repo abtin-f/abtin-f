@@ -47,7 +47,7 @@ fun FoldersScreen(vm: MusicViewModel, bottomPad: Dp, onOpenFolder: (Long) -> Uni
                 modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, top = 64.dp, bottom = 12.dp),
             )
         }
-        items(library.folders, key = { it.id }) { f ->
+        items(library.folders, key = { it.path }) { f ->
             Row(
                 Modifier.fillMaxWidth().clickable { onOpenFolder(f.id) }.padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -164,7 +164,7 @@ fun DetailScreen(
                 item { Text("Nothing here yet.", style = AmType.Caption, color = Color.White.copy(alpha = 0.7f), modifier = Modifier.padding(16.dp)) }
             }
             if (artist != null) {
-                val albums = library.albums.filter { it.tracks.first().artistId == artist.id }
+                val albums = library.albums.filter { al -> al.tracks.any { it.artistId == artist.id } }
                 if (albums.isNotEmpty()) {
                     item { SectionHeader("Albums", Modifier.padding(top = 8.dp)) }
                     item {
