@@ -52,7 +52,7 @@ class AudioArtFetcher(private val data: AudioArt, private val options: Options) 
         val bmp = ArtLoader.load("${data.key}:$px") { decode(ctx, uri, px) } ?: return null
         // Hardware bitmaps are uploaded to the GPU here, off the UI thread (no hitch when a row first draws them);
         // requests that need pixel access (palette extraction) get a software copy instead.
-        return DrawableResult(BitmapDrawable(ctx.resources, bmp.forRequest(options.allowHardware)), false, DataSource.DISK)
+        return DrawableResult(BitmapDrawable(ctx.resources, bmp.forRequest(options.config == Bitmap.Config.HARDWARE)), false, DataSource.DISK)
     }
 
     private fun Bitmap.forRequest(allowHardware: Boolean): Bitmap = when {

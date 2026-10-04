@@ -55,6 +55,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -133,12 +135,36 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     LaunchedEffect(route) { Tab.entries.firstOrNull { it.route == route }?.let { tabState.value = it } }
 
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { vm.refreshLibrary() }
-    val requestPermission = remember(permissions) { { permissions.launch(MusicRepository.permissionsToRequest()) } }
+    // Asks for audio access. When Android will no longer show the dialog (denied twice) and the user taps "Allow",
+    // send them to the app's settings page instead; the automatic request at startup never does that.
+    val askPermission: (Boolean) -> Unit = remember(permissions) {
+        { fromUser ->
+            val activity = view.context as? Activity
+            val prefs = ctx.getSharedPreferences("permissions", android.content.Context.MODE_PRIVATE)
+            val canAsk = activity == null ||
+                androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, MusicRepository.audioPermission())
+            val blocked = prefs.getBoolean("asked", false) && !canAsk
+            if (!blocked) {
+                prefs.edit().putBoolean("asked", true).apply()
+                permissions.launch(MusicRepository.permissionsToRequest())
+            } else if (fromUser) {
+                runCatching {
+                    ctx.startActivity(
+                        android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${ctx.packageName}"))
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+            }
+        }
+    }
+    val requestPermission: () -> Unit = remember(askPermission) { { askPermission(true) } }
     LaunchedEffect(Unit) {
         val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, MusicRepository.audioPermission()) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (!granted) requestPermission()
+        if (!granted) askPermission(false)
     }
+    // Back from the system settings: pick up a permission that was just granted there.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.onResume() }
     val actions = remember(nav, vm, requestPermission) { NavActions(nav, vm, tabState, requestPermission) }
 
     // 0 = mini-player, 1 = full-screen Now Playing

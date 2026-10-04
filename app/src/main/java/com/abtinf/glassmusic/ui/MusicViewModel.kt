@@ -144,6 +144,9 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshLibrary() = viewModelScope.launch { repo.refresh() }
 
+    /** Back in the app (e.g. from the system settings): pick up a permission that was just granted. */
+    fun onResume() { if (!library.value.hasPermission && repo.hasAudioPermission()) refreshLibrary() }
+
     private fun buildHome(lib: Library, recents: List<Long>, plays: Map<Long, Int>, favs: Set<Long>, pls: List<Playlist>): HomeState {
         if (lib.tracks.isEmpty()) return HomeState()
         val recent = recents.mapNotNull { lib.trackById[it] }.ifEmpty { lib.recentlyAddedTracks }.take(14)
