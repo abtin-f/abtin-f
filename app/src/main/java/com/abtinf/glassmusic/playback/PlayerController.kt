@@ -78,7 +78,6 @@ class PlayerController(
     private val _selectedOutput = MutableStateFlow<Int?>(null)
     val selectedOutput: StateFlow<Int?> = _selectedOutput.asStateFlow()
     private var preferredDevice: android.media.AudioDeviceInfo? = null
-    private var userPickedPhone = false
 
     private fun isOutputType(t: Int) = when (t) {
         android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
@@ -97,22 +96,23 @@ class PlayerController(
 
     private fun refreshOutputs(added: Array<out android.media.AudioDeviceInfo>? = null) {
         val devs = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS).filter { isOutputType(it.type) }
+        val known = _outputs.value.mapTo(HashSet()) { it.id }
         _outputs.value = devs.map {
             val phone = it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
             OutputDevice(it.id, if (phone) "This phone" else it.productName?.toString()?.ifBlank { null } ?: "Headphones", phone)
         }.sortedByDescending { it.isPhone }
         val pref = preferredDevice
         if (pref != null && devs.none { it.id == pref.id }) applyPreferred(null) // the device went away: back to default routing
-        // A newly connected headset/bluetooth device takes over, like the system's own player would.
-        val fresh = added?.firstOrNull { isOutputType(it.type) && it.type != android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
-        if (fresh != null && !userPickedPhone) applyPreferred(devs.firstOrNull { it.id == fresh.id })
+        // A headset/bluetooth device that was just connected takes over (even if the phone speaker was picked earlier),
+        // like the system's own player would. Devices we already knew about never steal the route back.
+        val fresh = added?.firstOrNull { isOutputType(it.type) && it.type != android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER && it.id !in known }
+        if (fresh != null) applyPreferred(devs.firstOrNull { it.id == fresh.id })
         if (_selectedOutput.value == null) _selectedOutput.value = devs.firstOrNull { it.type != android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }?.id
             ?: devs.firstOrNull { it.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }?.id
     }
 
     fun selectOutput(id: Int) {
         val dev = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.id == id } ?: return
-        userPickedPhone = dev.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
         applyPreferred(dev)
     }
 
@@ -188,10 +188,7 @@ class PlayerController(
             refreshOutputs()
             audioManager.registerAudioDeviceCallback(object : android.media.AudioDeviceCallback() {
                 override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>) { refreshOutputs(addedDevices) }
-                override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>) {
-                    if (removedDevices.any { it.id == preferredDevice?.id }) userPickedPhone = false
-                    refreshOutputs()
-                }
+                override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>) { refreshOutputs() }
             }, android.os.Handler(android.os.Looper.getMainLooper()))
         }
         // Tick (position, fades, sleep timer) only while something is happening; an idle player must not wake the CPU.

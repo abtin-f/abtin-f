@@ -80,11 +80,15 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     val favorites = store.favorites
     val playlists = store.playlists
 
+    /** Bumped when the app comes back to the foreground so lyrics that were missing (e.g. no file access yet) are looked up again. */
+    private val lyricsReload = MutableStateFlow(0)
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentLyrics: StateFlow<List<LyricLine>> = combine(
         controller.state.map { it.current }.distinctUntilChanged(),
         store.lyrics,
-    ) { track, overrides -> track to overrides }.mapLatest { (track, overrides) ->
+        lyricsReload,
+    ) { track, overrides, _ -> track to overrides }.mapLatest { (track, overrides) ->
         when {
             track == null -> emptyList()
             track.lyrics.isNotEmpty() -> track.lyrics
@@ -145,7 +149,10 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshLibrary() = viewModelScope.launch { repo.refresh() }
 
     /** Back in the app (e.g. from the system settings): pick up a permission that was just granted. */
-    fun onResume() { if (!library.value.hasPermission && repo.hasAudioPermission()) refreshLibrary() }
+    fun onResume() {
+        if (!library.value.hasPermission && repo.hasAudioPermission()) refreshLibrary()
+        lyricsReload.update { it + 1 }
+    }
 
     private fun buildHome(lib: Library, recents: List<Long>, plays: Map<Long, Int>, favs: Set<Long>, pls: List<Playlist>): HomeState {
         if (lib.tracks.isEmpty()) return HomeState()

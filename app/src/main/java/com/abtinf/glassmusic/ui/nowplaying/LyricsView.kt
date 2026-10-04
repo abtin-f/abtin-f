@@ -1,6 +1,5 @@
 package com.abtinf.glassmusic.ui.nowplaying
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -28,9 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
@@ -45,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.abtinf.glassmusic.data.LyricLine
 import com.abtinf.glassmusic.ui.theme.AmType
 
-/** Large left-aligned lyrics: current line is bright and sharp, neighbours are faded and softly blurred. */
+/** Large centred lyrics: the current line is bright, its neighbours are faded. */
 @Composable
 fun LyricsView(
     lines: List<LyricLine>,
@@ -112,14 +109,12 @@ fun LyricsView(
         itemsIndexed(lines, key = { i, l -> "$i-${l.timeMs}" }) { i, line ->
             val isCurrent = !synced || i == current
             val a by animateFloatAsState(if (isCurrent) 1f else 0.55f, tween(400), label = "lyricAlpha")
-            val blur by animateDpAsState(0.dp, tween(400), label = "lyricBlur")
             Column(
                 Modifier
                     .fillMaxWidth()
                     .clickable(enabled = synced) { onSeek(line.timeMs) }
                     .padding(vertical = 7.dp)
-                    .alpha(a)
-                    .blur(blur, BlurredEdgeTreatment.Unbounded),
+                    .alpha(a),
             ) {
                 Text(line.text, style = AmType.Lyric.copy(fontSize = 19.sp, lineHeight = 26.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 if (line.translation != null && showTranslation) {
