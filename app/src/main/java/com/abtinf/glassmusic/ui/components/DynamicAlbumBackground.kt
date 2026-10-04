@@ -50,7 +50,7 @@ fun rememberArtColors(track: Track?): Pair<Color, Color> {
         val t = track
         val uri = t?.artUri
         if (t == null || uri == null) { extracted = null; return@LaunchedEffect }
-        val request = ImageRequest.Builder(ctx).data(AudioArt(uri, "album:${t.albumId}")).size(160).allowHardware(false).build()
+        val request = ImageRequest.Builder(ctx).data(AudioArt(uri, t.artKey)).size(160).allowHardware(false).build()
         val bmp = (ctx.imageLoader.execute(request) as? SuccessResult)?.drawable?.toBitmap()
         if (bmp == null) { extracted = null; return@LaunchedEffect }
         val palette = withContext(Dispatchers.Default) { Palette.from(bmp).maximumColorCount(16).generate() }
@@ -79,7 +79,7 @@ fun DynamicAlbumBackground(track: Track?, modifier: Modifier = Modifier, scrimAl
             ArtworkImage(
                 seed = t?.seed ?: 0,
                 artUri = t?.artUri,
-                artKey = t?.let { "album:${it.albumId}" },
+                artKey = t?.artKey,
                 maxEdge = 160,
                 corner = 0.dp,
                 modifier = Modifier

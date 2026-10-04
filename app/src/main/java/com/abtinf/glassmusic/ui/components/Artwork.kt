@@ -103,7 +103,7 @@ fun ArtworkImage(
 
 @Composable
 fun Artwork(track: Track?, modifier: Modifier = Modifier, corner: Dp = 8.dp, elevation: Dp = 0.dp) {
-    ArtworkImage(track?.seed ?: 0, track?.artUri, modifier, corner, elevation, artKey = track?.let { "album:${it.albumId}" })
+    ArtworkImage(track?.seed ?: 0, track?.artUri, modifier, corner, elevation, artKey = track?.artKey)
 }
 
 /** 2x2 mosaic for playlists (falls back to a single cover when fewer than four tracks). */

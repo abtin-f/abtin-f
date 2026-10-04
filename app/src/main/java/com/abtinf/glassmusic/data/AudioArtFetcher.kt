@@ -49,7 +49,7 @@ class AudioArtFetcher(private val data: AudioArt, private val options: Options) 
         val ctx = options.context
         val px = bucket(options)
         val uri = Uri.parse(data.uri)
-        val bmp = ArtLoader.load("${data.key}:$px") { decode(ctx, uri, px) } ?: return null
+        val bmp = ArtLoader.load(flightKey = "${data.key}:$px", missKey = "${data.uri}:$px") { decode(ctx, uri, px) } ?: return null
         // Hardware bitmaps are uploaded to the GPU here, off the UI thread (no hitch when a row first draws them);
         // requests that need pixel access (palette extraction) get a software copy instead.
         return DrawableResult(BitmapDrawable(ctx.resources, bmp.forRequest(options.config == Bitmap.Config.HARDWARE)), false, DataSource.DISK)
@@ -107,8 +107,8 @@ class AudioArtFetcher(private val data: AudioArt, private val options: Options) 
 
 /**
  * Runs cover decoding on a small dedicated pool (scrolling a long list must not start dozens of file reads at
- * once), shares one decode between simultaneous requests for the same picture, and remembers pictures that
- * don't exist so they are not looked up again every time a row scrolls into view.
+ * once), shares one decode between simultaneous requests for the same picture, and remembers files that have no
+ * picture so they are not looked up again every time a row scrolls into view.
  */
 private object ArtLoader {
     private val scope = CoroutineScope(
@@ -119,22 +119,33 @@ private object ArtLoader {
     private val inFlight = HashMap<String, Deferred<Bitmap?>>()
     private val missing = HashSet<String>()
 
-    suspend fun load(key: String, block: () -> Bitmap?): Bitmap? {
-        val job = synchronized(inFlight) {
-            if (key in missing) return null
-            inFlight.getOrPut(key) {
-                val d = scope.async(start = CoroutineStart.LAZY) {
-                    try {
-                        block()
-                    } finally {
-                        synchronized(inFlight) { inFlight.remove(key) }
-                    }
+    /**
+     * [flightKey] names the picture (every song of an album shares it, so one decode serves them all); [missKey] names
+     * the file, so a song without a picture is not asked again - without hiding the picture of a sibling that has one.
+     */
+    suspend fun load(flightKey: String, missKey: String, block: () -> Bitmap?): Bitmap? {
+        for (attempt in 0 until 3) {
+            var owner = false
+            val job = synchronized(inFlight) {
+                if (missKey in missing) return null
+                inFlight[flightKey] ?: run {
+                    owner = true
+                    scope.async(start = CoroutineStart.LAZY) {
+                        try {
+                            block()
+                        } finally {
+                            synchronized(inFlight) { inFlight.remove(flightKey) }
+                        }
+                    }.also { inFlight[flightKey] = it }
                 }
-                d
-            }.also { it.start() }
+            }
+            job.start()
+            val bmp = job.await()
+            if (bmp != null) return bmp
+            if (owner) break
+            // Joined a decode that was started for another song of the album and found nothing: try this song's own file.
         }
-        val bmp = job.await()
-        if (bmp == null) synchronized(inFlight) { missing.add(key) }
-        return bmp
+        synchronized(inFlight) { missing.add(missKey) }
+        return null
     }
 }

@@ -53,7 +53,7 @@ object MediaStoreSource {
                     val id = c.getLong(iId)
                     val uri = ContentUris.withAppendedId(collection, id).toString()
                     val artist = c.getString(iArtist)?.takeUnless { it == "<unknown>" } ?: "Unknown Artist"
-                    val album = c.getString(iAlbum)?.takeUnless { it.isBlank() } ?: "Unknown Album"
+                    val album = c.getString(iAlbum)?.takeUnless { it.isBlank() } ?: UNKNOWN_ALBUM
                     val data = if (iData >= 0) c.getString(iData) else null
                     val folder = (if (iRel >= 0) c.getString(iRel) else null)
                         ?: data?.substringBeforeLast('/', "")?.removePrefix("/storage/emulated/0/")?.plus("/")

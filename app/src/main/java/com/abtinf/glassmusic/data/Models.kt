@@ -2,6 +2,9 @@ package com.abtinf.glassmusic.data
 
 data class LyricLine(val timeMs: Long, val text: String, val translation: String? = null)
 
+/** Shown for songs whose file has no album tag. */
+const val UNKNOWN_ALBUM = "Unknown Album"
+
 data class Track(
     val id: Long,
     val title: String,
@@ -33,6 +36,8 @@ data class Track(
     val seed: Int = album.hashCode() xor (artist.hashCode() * 31)
     /** Lower-cased "title artist album" so searching never allocates per keystroke. */
     val searchKey: String = (title + "\u0001" + artist + "\u0001" + album).lowercase()
+    /** Cover cache key: the songs of an album share one decoded picture, but "Unknown Album" is not one album. */
+    val artKey: String = if (album == UNKNOWN_ALBUM) "track:$id" else "album:$albumId"
 }
 
 /** 64-bit FNV-1a, so two different albums/artists practically never share an id. */
