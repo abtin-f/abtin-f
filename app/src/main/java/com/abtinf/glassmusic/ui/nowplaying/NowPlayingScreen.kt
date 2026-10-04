@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -132,6 +133,9 @@ fun NowPlayingScreen(
     var outputOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
     var sleepOpen by remember { mutableStateOf(false) }
+
+    // Back closes whichever sheet is open before it collapses the player.
+    BackHandler(enabled = menuOpen || outputOpen || detailsOpen) { menuOpen = false; outputOpen = false; detailsOpen = false }
 
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val t = vm.playerState.value.current

@@ -62,8 +62,11 @@ adb shell input tap 184 2246; sleep 2.5; shot lyrics
 adb shell input tap 897 2246; sleep 2.5; shot queue
 adb shell input tap 184 2246; sleep 1.5
 adb shell input tap 540 2246; sleep 2.5; shot output
-back; sleep 1.5
-adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed
+# Back must close the open sheet first, and only then collapse the player (also when a screen with a back stack is behind it)
+back; sleep 1.5; shot output_closed_by_back
+back; sleep 2; shot player_collapsed_by_back
+adb shell input tap 400 2040; sleep 3
+adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed_by_swipe
 
 # --- D: real songs + system media controls (notification / media keys) ---------------------------
 mkdir -p /tmp/music && python3 ci/make_audio.py /tmp/music
@@ -116,7 +119,7 @@ adb shell input tap 400 2040; sleep 3; shot cover_player
 adb shell input tap 184 2246; sleep 3; shot cover_lyrics_embedded
 adb shell input keyevent 87; sleep 4; shot cover_lyrics_sidecar_next
 sleep 6; shot cover_lyrics_sidecar_later
-adb shell input swipe 540 160 540 1800 300; sleep 2
+back; sleep 2
 tap "Folders"; shot cover_folders
 tap "GlassTest"; shot cover_folder_detail
 adb logcat -d | grep -iE "AndroidRuntime|FATAL|ANR in" | head -20 > out/errors.txt

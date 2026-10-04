@@ -170,7 +170,6 @@ fun AppRoot(vm: MusicViewModel = viewModel()) {
     // 0 = mini-player, 1 = full-screen Now Playing
     val expand = remember { Animatable(0f) }
     val expanded by remember { androidx.compose.runtime.derivedStateOf { expand.value > 0.001f } }
-    BackHandler(enabled = expanded) { scope.launch { expand.animateTo(0f, tween(300, easing = FastOutSlowInEasing)) } }
 
     val lightBars = false
     SideEffect {
@@ -289,6 +288,10 @@ private fun BoxWithConstraintsScope.PlayerChrome(
     val scope = rememberCoroutineScope()
     val ps by vm.playback.collectAsState()
     val tab by actions.tabState
+
+    // Registered here, after the NavHost (the last registered handler wins): Back collapses the player first, even when
+    // the screen behind it has a back stack that the NavHost would otherwise pop.
+    BackHandler(enabled = expanded) { settle(false) }
 
     val dragModifier = Modifier.pointerInput(Unit) {
         detectVerticalDragGestures(
