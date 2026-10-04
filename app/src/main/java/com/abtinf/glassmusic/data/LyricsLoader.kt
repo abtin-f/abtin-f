@@ -135,9 +135,15 @@ object LyricsLoader {
     }
 
     private fun decode(b: ByteArray, from: Int, to: Int, enc: Int): String {
-        var s = String(b, from, (to - from).coerceAtLeast(0), charsetOf(enc))
-        if (enc == 0 && 'Ø' in s && '§' in s) s = String(b, from, to - from, Charset.forName("windows-1256"))
-        return s.trimEnd('\u0000')
+        val len = (to - from).coerceAtLeast(0)
+        if (enc == 0 && len > 0) {
+            // Persian/Arabic tags are often written in Windows-1256 but labelled ISO-8859-1: if most bytes are
+            // "high" bytes it cannot be Western European text, so decode it as Windows-1256.
+            var high = 0
+            for (i in from until from + len) if (b[i].toInt() < 0) high++
+            if (high * 10 > len * 4) return String(b, from, len, Charset.forName("windows-1256")).trimEnd('\u0000')
+        }
+        return String(b, from, len, charsetOf(enc)).trimEnd('\u0000')
     }
 
     private fun usltText(b: ByteArray): String? {
