@@ -142,10 +142,12 @@ private object ArtLoader {
             job.start()
             val bmp = job.await()
             if (bmp != null) return bmp
-            if (owner) break
+            if (owner) {
+                synchronized(inFlight) { missing.add(missKey) }
+                return null
+            }
             // Joined a decode that was started for another song of the album and found nothing: try this song's own file.
         }
-        synchronized(inFlight) { missing.add(missKey) }
-        return null
+        return null // only ever joined other songs' empty decodes: not remembered as missing, the next request asks again
     }
 }
