@@ -30,7 +30,8 @@ object PlaylistGenerator {
             val hay = (t.title + " " + t.album + " " + t.artist).lowercase(Locale.ROOT)
             words.any { hay.contains(it) }
         }
-        val rest = lib.tracks.filter { it !in matched }.shuffled(rnd)
+        val matchedIds = matched.mapTo(HashSet()) { it.id }
+        val rest = lib.tracks.filter { it.id !in matchedIds }.shuffled(rnd)
         val picks = (matched + rest).take(SIZE)
         val name = if (q.isBlank()) "New Playlist"
         else q.split(" ").filter { it.isNotBlank() }.take(4)

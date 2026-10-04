@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,7 +49,7 @@ import com.abtinf.glassmusic.ui.theme.AmType
 @Composable
 fun LyricsView(
     lines: List<LyricLine>,
-    positionMs: Long,
+    position: kotlinx.coroutines.flow.StateFlow<Long>,
     showTranslation: Boolean,
     onSeek: (Long) -> Unit,
     onImport: () -> Unit,
@@ -79,13 +81,17 @@ fun LyricsView(
         return
     }
 
-    val current = lines.indexOfLast { it.timeMs <= positionMs }.coerceAtLeast(0)
+    // Plain (unsynced) lyrics carry no timestamps: show them as ordinary text without a moving highlight.
+    val synced = lines.first().timeMs >= 0
+    val positionMs by position.collectAsState()
+    // Only changes when the sung line changes, so the list does not recompose four times a second.
+    val current by remember(lines) { derivedStateOf { if (synced) lines.indexOfLast { it.timeMs <= positionMs }.coerceAtLeast(0) else -1 } }
     val listState = rememberLazyListState()
     var viewportH by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
     LaunchedEffect(current, viewportH, lines) {
-        if (viewportH > 0) listState.animateScrollToItem(current, scrollOffset = -(viewportH * 0.22f).toInt())
+        if (viewportH > 0 && current >= 0) listState.animateScrollToItem(current, scrollOffset = -(viewportH * 0.22f).toInt())
     }
 
     LazyColumn(
@@ -104,13 +110,13 @@ fun LyricsView(
         contentPadding = PaddingValues(top = with(density) { (viewportH * 0.22f).toDp() }, bottom = with(density) { (viewportH * 0.7f).toDp() }),
     ) {
         itemsIndexed(lines, key = { i, l -> "$i-${l.timeMs}" }) { i, line ->
-            val isCurrent = i == current
+            val isCurrent = !synced || i == current
             val a by animateFloatAsState(if (isCurrent) 1f else 0.55f, tween(400), label = "lyricAlpha")
             val blur by animateDpAsState(0.dp, tween(400), label = "lyricBlur")
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { onSeek(line.timeMs) }
+                    .clickable(enabled = synced) { onSeek(line.timeMs) }
                     .padding(vertical = 7.dp)
                     .alpha(a)
                     .blur(blur, BlurredEdgeTreatment.Unbounded),

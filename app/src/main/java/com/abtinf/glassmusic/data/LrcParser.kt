@@ -2,7 +2,7 @@ package com.abtinf.glassmusic.data
 
 /**
  * Parses LRC text ("[mm:ss.xx] line"). Consecutive lines that share a timestamp become
- * line + translation. Text without timestamps is spread evenly over the song duration.
+ * line + translation. Text without timestamps comes back unsynced (every line has timeMs = -1).
  */
 object LrcParser {
     private val stamp = Regex("""\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?]""")
@@ -47,7 +47,7 @@ object LrcParser {
             return out
         }
         if (plain.isEmpty()) return emptyList()
-        val step = (durationMs.coerceAtLeast(30_000) - 10_000) / plain.size
-        return plain.mapIndexed { i, s -> LyricLine(5_000 + i * step, s) }
+        // No timestamps in the text: keep the lines but mark them unsynced (timeMs = -1).
+        return plain.map { LyricLine(-1L, it) }
     }
 }

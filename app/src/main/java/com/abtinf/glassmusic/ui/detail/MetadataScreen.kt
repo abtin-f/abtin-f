@@ -108,7 +108,7 @@ fun MetadataScreen(trackId: Long, vm: MusicViewModel, bottomPad: Dp, onBack: () 
             }
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    RedPill("Play", AmIcons.Play, Modifier.weight(1f)) { vm.play(listOf(track), 0) }
+                    RedPill("Play", AmIcons.Play, Modifier.weight(1f)) { vm.playInContext(track) }
                     RedPill("Delete", AmIcons.Trash, Modifier.weight(1f)) { confirmDelete = true }
                 }
             }

@@ -14,12 +14,16 @@ import com.abtinf.glassmusic.data.PlaylistGenerator
 import com.abtinf.glassmusic.data.Track
 import com.abtinf.glassmusic.playback.PlayerState
 import com.abtinf.glassmusic.ui.components.HomePick
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -91,23 +95,21 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
 
     val home: StateFlow<HomeState> = combine(library, store.recents, store.plays, favorites, playlists) { lib, recents, plays, favs, pls ->
         buildHome(lib, recents, plays, favs, pls)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
     // ---- search ---------------------------------------------------------------------------
     val query = MutableStateFlow("")
     val searchFilter = MutableStateFlow(SearchFilter.All)
-    val searchResults: StateFlow<SearchResults> = combine(query, library, playlists) { q, lib, pls ->
+    @OptIn(FlowPreview::class)
+    val searchResults: StateFlow<SearchResults> = combine(query.debounce(90), library, playlists) { q, lib, pls ->
         val s = q.trim().lowercase()
         if (s.isEmpty()) SearchResults() else SearchResults(
-            songs = lib.tracks.filter { t ->
-                t.title.lowercase().contains(s) || t.artist.lowercase().contains(s) ||
-                    t.album.lowercase().contains(s) || t.lyrics.any { it.text.lowercase().contains(s) }
-            },
-            artists = lib.artists.filter { it.name.lowercase().contains(s) },
-            albums = lib.albums.filter { it.title.lowercase().contains(s) || it.artist.lowercase().contains(s) },
-            playlists = pls.filter { it.name.lowercase().contains(s) },
+            songs = lib.tracks.filter { t -> t.searchKey.contains(s) || t.lyrics.any { it.text.contains(s, ignoreCase = true) } },
+            artists = lib.artists.filter { it.name.contains(s, ignoreCase = true) },
+            albums = lib.albums.filter { it.title.contains(s, ignoreCase = true) || it.artist.contains(s, ignoreCase = true) },
+            playlists = pls.filter { it.name.contains(s, ignoreCase = true) },
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchResults())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchResults())
 
     // ---- overlays -------------------------------------------------------------------------
     private val _menu = MutableStateFlow<TrackMenu?>(null)
@@ -137,6 +139,7 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         viewModelScope.launch { repo.refresh() }
+        repo.startObserving()
     }
 
     fun refreshLibrary() = viewModelScope.launch { repo.refresh() }
@@ -162,6 +165,17 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- playback -------------------------------------------------------------------------
     fun play(tracks: List<Track>, index: Int) = controller.playQueue(tracks, index)
+    /**
+     * Plays [track] and carries on after it: through its album, or - for singles - through the rest of the library,
+     * so Next / Previous (also from the notification) always have somewhere to go.
+     */
+    fun playInContext(track: Track) {
+        val lib = library.value
+        val album = lib.albumById[track.albumId]?.tracks
+        val queue = if (album != null && album.size > 1) album else lib.tracks.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+        controller.playQueue(queue, queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0))
+    }
+
     fun shuffle(tracks: List<Track>) { if (tracks.isNotEmpty()) controller.playQueue(tracks, tracks.indices.random(), shuffle = true) }
     fun togglePlay() = controller.toggle()
     fun next() = controller.next()

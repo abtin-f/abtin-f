@@ -80,14 +80,22 @@ shot real_home
 tap "Library"; tap "Songs"; shot real_songs
 tap "GlassTestA"; shot real_song_opened
 tap "Play" 0 4
-ms() { adb shell dumpsys media_session > "out/ms_$1.txt" 2>&1; grep -m1 -A3 "description=" "out/ms_$1.txt" > /dev/null; }
+ms() {
+  adb shell dumpsys media_session > "out/ms_$1.txt" 2>&1
+  echo "$1 | $(grep -m1 -o 'description=[^,]*' "out/ms_$1.txt") | $(grep -m1 -o 'state=PlaybackState {[^}]*}' "out/ms_$1.txt" | cut -c1-120)" >> out/ms_summary.txt
+}
 adb shell input keyevent 3; sleep 4; shot real_home_screen_playing; ms 0_playing
-adb shell input keyevent 87; sleep 3; ms 1_after_next
+adb shell input keyevent 87; sleep 2; ms 1_after_next
 adb shell input keyevent 88; sleep 1; ms 2_after_prev_quick
+adb shell input keyevent 87; sleep 2; ms 3_next_again
+adb shell input keyevent 87; sleep 2; ms 4_next_again
+adb shell input keyevent 85; sleep 2; ms 5_after_playpause
+adb shell input keyevent 85; sleep 2; ms 6_after_playpause2
 adb shell cmd statusbar expand-notifications; sleep 3; shot shade
-python3 ci/tap.py "Next track" | tee -a out/taps.txt; sleep 3; shot shade_after_next_tap; ms 3_after_shade_next
-python3 ci/tap.py "Next" | tee -a out/taps.txt; sleep 3; ms 4_after_shade_next2
-adb logcat -d | grep -iE "media3|MediaSession|PlayerController|glassmusic|AndroidRuntime" | tail -300 > out/media_log.txt
+adb shell uiautomator dump /sdcard/shade.xml > /dev/null 2>&1; adb pull /sdcard/shade.xml out/shade_ui.xml > /dev/null 2>&1
+python3 ci/tap.py "Next track" | tee -a out/taps.txt; sleep 3; shot shade_after_next_tap; ms 7_after_shade_next
+python3 ci/tap.py "Previous track" | tee -a out/taps.txt; sleep 2; ms 8_after_shade_prev
+adb logcat -d | grep -iE "media3|MediaSession|PlayerController|glassmusic|AndroidRuntime|GlassSession|GlassPlayer" | tail -400 > out/media_log.txt
 adb shell cmd statusbar collapse
 
 adb logcat -d -b crash > out/crash.txt

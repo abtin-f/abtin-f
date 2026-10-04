@@ -26,13 +26,25 @@ data class Track(
     /** Absolute file path when known (used to find sidecar .lrc files). */
     val path: String? = null,
 ) {
-    val albumId: Long get() = albumIdOf(album, artist)
-    val artistId: Long get() = artistIdOf(artist)
-    val seed: Int get() = album.hashCode() xor (artist.hashCode() * 31)
+    // Computed once per track: grouping and sorting read these thousands of times.
+    val albumId: Long = albumIdOf(album, artist)
+    val artistId: Long = artistIdOf(artist)
+    val seed: Int = album.hashCode() xor (artist.hashCode() * 31)
+    /** Lower-cased "title artist album" so searching never allocates per keystroke. */
+    val searchKey: String = (title + "\u0001" + artist + "\u0001" + album).lowercase()
 }
 
-fun albumIdOf(album: String, artist: String): Long = (album.lowercase() + "|" + artist.lowercase()).hashCode().toLong()
-fun artistIdOf(artist: String): Long = artist.lowercase().hashCode().toLong()
+/** 64-bit FNV-1a, so two different albums/artists practically never share an id. */
+fun stableHash(s: String): Long {
+    var h = -0x340d631b7bdddcdbL // FNV offset basis
+    for (c in s) {
+        h = (h xor c.code.toLong()) * 0x100000001b3L
+    }
+    return h
+}
+
+fun albumIdOf(album: String, artist: String): Long = stableHash(album.lowercase() + "|" + artist.lowercase())
+fun artistIdOf(artist: String): Long = stableHash(artist.lowercase())
 
 data class Album(val id: Long, val title: String, val artist: String, val tracks: List<Track>) {
     val cover: Track get() = tracks.first()
@@ -44,7 +56,7 @@ data class Artist(val id: Long, val name: String, val tracks: List<Track>) {
 }
 
 data class Folder(val path: String, val tracks: List<Track>) {
-    val id: Long get() = path.lowercase().hashCode().toLong()
+    val id: Long = stableHash(path.lowercase())
     val name: String get() = path.trimEnd('/').substringAfterLast('/').ifBlank { "Storage" }
     val parent: String get() = path.trimEnd('/').substringBeforeLast('/', "")
 }
@@ -75,13 +87,17 @@ data class Library(
     companion object {
         fun build(tracks: List<Track>, isDemo: Boolean, hasPermission: Boolean): Library {
             val albums = tracks.groupBy { it.albumId }.map { (id, list) ->
-                Album(id, list.first().album, list.first().artist, list.sortedBy { it.title })
-            }.sortedBy { it.title.lowercase() }
+                Album(
+                    id, list.first().album, list.first().artist,
+                    // Album order: disc, track number (unnumbered last), then title.
+                    list.sortedWith(compareBy<Track>({ it.discNo }, { if (it.trackNo > 0) it.trackNo else Int.MAX_VALUE }).thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
+                )
+            }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
             val artists = tracks.groupBy { it.artistId }.map { (id, list) ->
-                Artist(id, list.first().artist, list.sortedBy { it.title })
-            }.sortedBy { it.name.lowercase() }
+                Artist(id, list.first().artist, list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }))
+            }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
             val folders = tracks.groupBy { it.folder }.map { (path, list) ->
-                Folder(path, list.sortedWith(compareBy({ it.discNo }, { it.trackNo }, { it.title.lowercase() })))
+                Folder(path, list.sortedWith(compareBy<Track>({ it.discNo }, { it.trackNo }).thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }))
             }.sortedBy { it.path.lowercase() }
             return Library(tracks, albums, artists, folders, isDemo, hasPermission, loaded = true)
         }

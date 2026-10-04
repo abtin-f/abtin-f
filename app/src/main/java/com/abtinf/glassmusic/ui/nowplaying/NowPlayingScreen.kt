@@ -168,9 +168,8 @@ fun NowPlayingScreen(
                                         CompactHeader(track, fav, shared, { vm.toggleFavorite(track) }, { menuOpen = true })
                                         if (m == NpMode.Lyrics) {
                                             Spacer(Modifier.height(12.dp))
-                                            val position by vm.positionMs.collectAsState()
                                             LyricsView(
-                                                lines = lyrics, positionMs = position, showTranslation = true,
+                                                lines = lyrics, position = vm.positionMs, showTranslation = true,
                                                 onSeek = { vm.seekMs(it) }, onImport = { importer.launch(arrayOf("*/*")) },
                                             )
                                         } else {
@@ -285,28 +284,8 @@ private fun PlainIcon(icon: ImageVector, desc: String, modifier: Modifier, onCli
 @Composable
 private fun Footer(vm: MusicViewModel, ps: PlayerState, track: Track, mode: NpMode, onMode: (NpMode) -> Unit, onOutput: () -> Unit) {
     val ctx = LocalContext.current
-    val position by vm.positionMs.collectAsState()
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
-        val dur = ps.durationMs.coerceAtLeast(1L)
-        SeekBar(progress = position / dur.toFloat(), onSeek = { vm.seekFraction(it) })
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(formatTime(position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                val label = if (ps.isMixing) "Mixing" else ""
-                Crossfade(label, label = "npLabel") { l ->
-                    if (l.isNotEmpty()) Text(l, style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
-                    else Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(AmIcons.Waveform, null, tint = Muted, modifier = Modifier.size(11.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            listOfNotNull(track.format, track.bitrateKbps.takeIf { it > 0 }?.let { "$it kbps" }).joinToString("  ·  "),
-                            style = AmType.Tiny.copy(fontSize = 10.sp), color = Muted,
-                        )
-                    }
-                }
-            }
-            Text("-" + formatTime(dur - position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
-        }
+        ProgressSection(vm, ps, track)
 
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
@@ -327,6 +306,32 @@ private fun Footer(vm: MusicViewModel, ps: PlayerState, track: Track, mode: NpMo
             ModeButton(AmIcons.Device, "Output", false, onOutput)
             ModeButton(AmIcons.Queue, "Queue", mode == NpMode.Queue) { onMode(NpMode.Queue) }
         }
+    }
+}
+
+/** Seek bar + elapsed / remaining time. The only part of the player that reads the 4 Hz position. */
+@Composable
+private fun ProgressSection(vm: MusicViewModel, ps: PlayerState, track: Track) {
+    val position by vm.positionMs.collectAsState()
+    val dur = ps.durationMs.coerceAtLeast(1L)
+    SeekBar(progress = position / dur.toFloat(), onSeek = { vm.seekFraction(it) })
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(formatTime(position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            val label = if (ps.isMixing) "Mixing" else ""
+            Crossfade(label, label = "npLabel") { l ->
+                if (l.isNotEmpty()) Text(l, style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
+                else Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(AmIcons.Waveform, null, tint = Muted, modifier = Modifier.size(11.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        listOfNotNull(track.format, track.bitrateKbps.takeIf { it > 0 }?.let { "$it kbps" }).joinToString("  ·  "),
+                        style = AmType.Tiny.copy(fontSize = 10.sp), color = Muted,
+                    )
+                }
+            }
+        }
+        Text("-" + formatTime(dur - position), style = AmType.Tiny.copy(fontSize = 12.sp), color = Muted)
     }
 }
 

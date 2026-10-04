@@ -44,7 +44,11 @@ android {
 }
 
 kotlin {
-    compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        // Media3 marks parts of its API @UnstableApi (e.g. media-button handling); we use those deliberately.
+        optIn.add("androidx.media3.common.util.UnstableApi")
+    }
 }
 
 dependencies {
@@ -73,4 +77,8 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-session:1.4.1")
     implementation("androidx.media3:media3-common:1.4.1")
+
+    // Installs the baseline profiles (ours + the ones Compose ships) on first launch, so sideloaded builds start
+    // and scroll smoothly instead of running interpreted/JIT code until Android gets around to optimising them.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 }

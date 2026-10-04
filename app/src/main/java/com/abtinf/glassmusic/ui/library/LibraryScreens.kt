@@ -151,6 +151,23 @@ fun LibraryListScreen(
     var lossless by remember { mutableStateOf(false) }
     var filterMenu by remember { mutableStateOf(false) }
 
+    // Filtered + sorted once per change (not on every pass of the list builder below).
+    val songs = remember(library.tracks, query, sort, lossless, kind) {
+        val q = query.trim().lowercase()
+        if (kind != "songs" && kind != "downloaded") emptyList<Track>()
+        else library.tracks
+            .filter { t -> q.isEmpty() || t.searchKey.contains(q) }
+            .filter { !lossless || it.format == "FLAC" || it.format == "WAV" }
+            .let { l ->
+                when (sort) {
+                    "Artist" -> l.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.artist })
+                    "Recently Added" -> l.sortedByDescending { it.dateAdded }
+                    "Duration" -> l.sortedByDescending { it.durationMs }
+                    else -> l.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+                }
+            }
+    }
+
     Box(Modifier.fillMaxSize().background(am.background)) {
         LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = bottomPad)) {
             item { Spacer(Modifier.statusBarsPadding().height(56.dp)) }
@@ -175,17 +192,6 @@ fun LibraryListScreen(
                             }
                         }
                     }
-                    val songs = library.tracks
-                        .filter { t -> query.isBlank() || t.title.contains(query, true) || t.artist.contains(query, true) || t.album.contains(query, true) }
-                        .filter { !lossless || it.format == "FLAC" || it.format == "WAV" }
-                        .let { l ->
-                            when (sort) {
-                                "Artist" -> l.sortedBy { it.artist.lowercase() }
-                                "Recently Added" -> l.sortedByDescending { it.dateAdded }
-                                "Duration" -> l.sortedByDescending { it.durationMs }
-                                else -> l.sortedBy { it.title.lowercase() }
-                            }
-                        }
                     item {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("${songs.size} tracks", style = AmType.Body.copy(fontSize = 14.sp, fontWeight = FontWeight.Normal), color = am.secondary)

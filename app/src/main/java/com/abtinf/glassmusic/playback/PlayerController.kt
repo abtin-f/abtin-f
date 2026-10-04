@@ -2,7 +2,9 @@ package com.abtinf.glassmusic.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.os.SystemClock
+import android.util.LruCache
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
@@ -14,7 +16,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.abtinf.glassmusic.data.Track
+import com.abtinf.glassmusic.data.AudioArtFetcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -129,11 +133,15 @@ class PlayerController(
                     }
 
                     override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (playbackState == Player.STATE_READY) errorStreak = 0
                         if (playbackState == Player.STATE_ENDED && currentIsReal()) onEnded()
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
-                        if (currentIsReal()) next()
+                        if (!currentIsReal()) return
+                        // A broken file skips to the next song, but a whole queue of broken files must not spin forever.
+                        errorStreak++
+                        if (errorStreak >= 4) { errorStreak = 0; pause() } else next()
                     }
                 })
             }
@@ -152,10 +160,10 @@ class PlayerController(
             override fun isCommandAvailable(command: Int): Boolean = availableCommands.contains(command)
             override fun hasNextMediaItem(): Boolean = true
             override fun hasPreviousMediaItem(): Boolean = true
-            override fun seekToNext() = next()
-            override fun seekToPrevious() = previous()
-            override fun seekToNextMediaItem() = next()
-            override fun seekToPreviousMediaItem() = previous()
+            override fun seekToNext() { android.util.Log.i("GlassPlayer", "session seekToNext"); next() }
+            override fun seekToPrevious() { android.util.Log.i("GlassPlayer", "session seekToPrevious"); previous() }
+            override fun seekToNextMediaItem() { android.util.Log.i("GlassPlayer", "session seekToNextMediaItem"); next() }
+            override fun seekToPreviousMediaItem() { android.util.Log.i("GlassPlayer", "session seekToPreviousMediaItem"); previous() }
         }
     }
 
@@ -165,6 +173,12 @@ class PlayerController(
     private var mixedIn = false
     private var lastRecorded: Long? = null
     private var controllerFuture: Any? = null
+
+    /** The current real track has not been handed to ExoPlayer yet (nothing played since the app started). */
+    private var needsLoad = false
+    private var errorStreak = 0
+    private val artCache = LruCache<Long, ByteArray>(8)
+    private val noArt = java.util.Collections.synchronizedSet(HashSet<Long>())
 
     init {
         runCatching {
@@ -212,6 +226,7 @@ class PlayerController(
         val t = _state.value.current ?: return
         ensureService()
         if (t.uri != null) {
+            ensureLoaded()
             if (exo.playbackState == Player.STATE_IDLE) exo.prepare()
             if (exo.playbackState == Player.STATE_ENDED) exo.seekTo(0)
             exo.play()
@@ -220,22 +235,23 @@ class PlayerController(
             lastTick = SystemClock.elapsedRealtime()
         }
         _state.update { it.copy(isPlaying = true, started = true) }
-        record(t)
     }
 
     fun pause() {
         val t = _state.value.current ?: return
-        if (t.uri != null) exo.pause()
+        if (t.uri != null && exoInitialized) exo.pause()
         _state.update { it.copy(isPlaying = false, isMixing = false) }
     }
 
     fun next() {
+        android.util.Log.i("GlassPlayer", "next() queue=${_state.value.queue.size} index=${_state.value.index}")
         val s = _state.value
         if (s.queue.isEmpty()) return
         goTo(nextIndex(), autoPlay = true)
     }
 
     fun previous() {
+        android.util.Log.i("GlassPlayer", "previous() queue=${_state.value.queue.size} index=${_state.value.index}")
         val s = _state.value
         if (s.queue.isEmpty()) return
         if (s.positionMs > 3_000) {
@@ -257,7 +273,7 @@ class PlayerController(
     fun seekTo(ms: Long) {
         val t = _state.value.current ?: return
         val pos = ms.coerceIn(0, t.durationMs)
-        if (t.uri != null) exo.seekTo(pos)
+        if (t.uri != null) { ensureLoaded(); exo.seekTo(pos) }
         simPos = pos
         lastTick = SystemClock.elapsedRealtime()
         _state.update { it.copy(positionMs = pos) }
@@ -356,27 +372,59 @@ class PlayerController(
         simPos = 0
         lastTick = SystemClock.elapsedRealtime()
         if (t.uri != null) {
-            exo.setMediaItem(
-                MediaItem.Builder().setUri(t.uri).setMediaMetadata(
-                    MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).apply {
-                        t.artUri?.let { u ->
-                            com.abtinf.glassmusic.data.AudioArtFetcher.notificationArt(context, android.net.Uri.parse(u))
-                                ?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
-                        }
-                    }.build(),
-                ).build(),
-            )
-            exo.prepare()
-            exo.playWhenReady = autoPlay
+            if (!autoPlay && !exoInitialized) {
+                needsLoad = true // nothing is playing yet: don't spin up ExoPlayer (and decode art) during app start
+            } else {
+                needsLoad = false
+                exo.setMediaItem(mediaItemFor(t))
+                exo.prepare()
+                exo.playWhenReady = autoPlay
+            }
         } else if (exoInitialized) {
+            needsLoad = false
             exo.stop()
             exo.clearMediaItems()
         }
         _state.update { it.copy(isPlaying = autoPlay, positionMs = 0, started = it.started || autoPlay) }
-        if (autoPlay) {
-            ensureService()
-            record(t)
-        }
+        if (autoPlay) ensureService()
+        prefetchArt()
+    }
+
+    /** Hands a deferred first track to ExoPlayer (paused). */
+    private fun ensureLoaded() {
+        if (!needsLoad) return
+        val t = _state.value.current ?: return
+        needsLoad = false
+        if (t.uri == null) return
+        exo.setMediaItem(mediaItemFor(t))
+        exo.prepare()
+        exo.playWhenReady = false
+    }
+
+    private fun mediaItemFor(t: Track): MediaItem {
+        val meta = MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).apply {
+            artBytes(t)?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+        }.build()
+        return MediaItem.Builder().setMediaId(t.id.toString()).setUri(t.uri).setMediaMetadata(meta).build()
+    }
+
+    /** Small cover JPEG for the system notification / lock screen; cached because decoding it is not free. */
+    private fun artBytes(t: Track): ByteArray? {
+        val u = t.artUri ?: return null
+        artCache.get(t.id)?.let { return it }
+        if (t.id in noArt) return null
+        val bytes = AudioArtFetcher.notificationArt(context, Uri.parse(u))
+        if (bytes != null) artCache.put(t.id, bytes) else noArt.add(t.id)
+        return bytes
+    }
+
+    /** Decode the covers of the neighbouring songs off the main thread so Next / Previous never stall on it. */
+    private fun prefetchArt() {
+        val s = _state.value
+        val targets = listOfNotNull(s.queue.getOrNull(s.index + 1), s.queue.getOrNull(s.index - 1))
+            .filter { it.uri != null && artCache.get(it.id) == null && it.id !in noArt }
+        if (targets.isEmpty()) return
+        scope.launch(Dispatchers.IO) { targets.forEach { artBytes(it) } }
     }
 
     private fun record(t: Track) {
@@ -394,7 +442,7 @@ class PlayerController(
             return
         }
         when {
-            s.repeat == RepeatMode.ONE -> { seekTo(0); play() }
+            s.repeat == RepeatMode.ONE -> { lastRecorded = null; seekTo(0); play() }
             hasNext() -> goTo(nextIndex(), autoPlay = true, mixed = mixedIn && s.autoMix)
             else -> {
                 goTo(0, autoPlay = false)
@@ -414,7 +462,7 @@ class PlayerController(
         val now = SystemClock.elapsedRealtime()
         val real = t.uri != null
         val pos = if (real) {
-            exo.currentPosition
+            if (exoInitialized && !needsLoad) exo.currentPosition else s.positionMs
         } else {
             if (s.isPlaying) simPos += now - lastTick
             simPos
@@ -430,7 +478,9 @@ class PlayerController(
             fadeIn -> 0.3f + 0.7f * (pos / FADE_IN_MS.toFloat()).coerceIn(0f, 1f)
             else -> 1f
         }
-        if (real) exo.volume = factor * (if (s.singMode) 0.4f else 1f)
+        if (real && exoInitialized) exo.volume = factor * (if (s.singMode) 0.4f else 1f)
+        // A play only counts once the song has really been listened to (not when it is skipped after a second).
+        if (s.isPlaying && lastRecorded != t.id && pos >= minOf(10_000L, t.durationMs / 2)) record(t)
         if (fadeOut && remaining <= HANDOFF_MS) { goTo(nextIndex(), autoPlay = true, mixed = true); return }
         if (!s.isPlaying && pos == s.positionMs) return
         _state.update { it.copy(positionMs = pos.coerceAtMost(t.durationMs), isMixing = fadeOut || fadeIn) }

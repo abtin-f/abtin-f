@@ -44,18 +44,19 @@ fun rememberArtColors(track: Track?): Pair<Color, Color> {
         val (a, b, _) = artPalette(track?.seed ?: 0)
         a.darken(0.55f) to b
     }
-    var extracted by remember(track?.id) { mutableStateOf<Pair<Color, Color>?>(null) }
+    // Not keyed by track: the old colours stay until the new ones are ready, so the background glides instead of flashing.
+    var extracted by remember { mutableStateOf<Pair<Color, Color>?>(null) }
     LaunchedEffect(track?.id) {
-        extracted = null
-        val uri = track?.artUri ?: return@LaunchedEffect
-        val request = ImageRequest.Builder(ctx).data(AudioArt(uri)).size(160).allowHardware(false).build()
-        val bmp = (ctx.imageLoader.execute(request) as? SuccessResult)?.drawable?.toBitmap() ?: return@LaunchedEffect
+        val t = track
+        val uri = t?.artUri
+        if (t == null || uri == null) { extracted = null; return@LaunchedEffect }
+        val request = ImageRequest.Builder(ctx).data(AudioArt(uri, "album:${t.albumId}")).size(160).allowHardware(false).build()
+        val bmp = (ctx.imageLoader.execute(request) as? SuccessResult)?.drawable?.toBitmap()
+        if (bmp == null) { extracted = null; return@LaunchedEffect }
         val palette = withContext(Dispatchers.Default) { Palette.from(bmp).maximumColorCount(16).generate() }
         val base = palette.darkMutedSwatch ?: palette.dominantSwatch ?: palette.mutedSwatch
         val accent = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.dominantSwatch
-        if (base != null && accent != null) {
-            extracted = Color(base.rgb).darken(0.8f) to Color(accent.rgb)
-        }
+        extracted = if (base != null && accent != null) Color(base.rgb).darken(0.8f) to Color(accent.rgb) else null
     }
     val target = extracted ?: fallback
     val c1 by animateColorAsState(target.first, tween(900), label = "artBase")
@@ -74,9 +75,12 @@ fun DynamicAlbumBackground(track: Track?, modifier: Modifier = Modifier, scrimAl
                 .background(Brush.verticalGradient(listOf(accent.copy(alpha = 0.85f), base, base.darken(0.6f)))),
         )
         Crossfade(targetState = track, animationSpec = tween(900), label = "bgArt") { t ->
+            // The picture is blurred beyond recognition, so a 160 px decode (shared with the palette lookup) is plenty.
             ArtworkImage(
                 seed = t?.seed ?: 0,
                 artUri = t?.artUri,
+                artKey = t?.let { "album:${it.albumId}" },
+                maxEdge = 160,
                 corner = 0.dp,
                 modifier = Modifier
                     .fillMaxSize()

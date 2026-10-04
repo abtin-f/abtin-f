@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 
 /** Thin scrubber with a small knob; the track swells while dragging. */
 @Composable
@@ -35,7 +37,12 @@ fun SeekBar(
     var dragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(0f) }
     var widthPx by remember { mutableIntStateOf(1) }
-    val shown = if (dragging) dragValue else progress.coerceIn(0f, 1f)
+    // After a release the knob stays where the finger left it until the player has caught up (no jump back and forth).
+    var holding by remember { mutableStateOf(false) }
+    LaunchedEffect(holding) {
+        if (holding) { delay(700); holding = false }
+    }
+    val shown = if (dragging || holding) dragValue else progress.coerceIn(0f, 1f)
     val trackH by animateDpAsState(if (dragging) 8.dp else 4.dp, label = "seekH")
     val knobR by animateDpAsState(if (dragging) 7.dp else 3.5.dp, label = "seekKnob")
 
@@ -44,11 +51,17 @@ fun SeekBar(
             .fillMaxWidth()
             .height(28.dp)
             .onSizeChanged { widthPx = it.width.coerceAtLeast(1) }
-            .pointerInput(Unit) { detectTapGestures { o -> onSeek((o.x / widthPx).coerceIn(0f, 1f)) } }
+            .pointerInput(Unit) {
+                detectTapGestures { o ->
+                    dragValue = (o.x / widthPx).coerceIn(0f, 1f)
+                    holding = true
+                    onSeek(dragValue)
+                }
+            }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragStart = { o -> dragging = true; dragValue = (o.x / widthPx).coerceIn(0f, 1f) },
-                    onDragEnd = { onSeek(dragValue); dragging = false },
+                    onDragEnd = { holding = true; onSeek(dragValue); dragging = false },
                     onDragCancel = { dragging = false },
                     onHorizontalDrag = { change, dx ->
                         change.consume()
