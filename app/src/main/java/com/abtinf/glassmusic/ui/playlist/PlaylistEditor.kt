@@ -97,8 +97,9 @@ fun PlaylistEditor(vm: MusicViewModel, onClose: () -> Unit) {
     var filter by remember { mutableStateOf("") }
     val visibleAll = remember(library.tracks, filter) {
         val q = filter.trim().lowercase()
-        if (q.isEmpty()) library.tracks else library.tracks.filter { it.title.lowercase().contains(q) || it.artist.lowercase().contains(q) || it.album.lowercase().contains(q) }
+        if (q.isEmpty()) library.tracks else library.tracks.filter { it.searchKey.contains(q) } // searchKey is precomputed: no allocation per song per keystroke
     }
+    val inPlaylist = remember(e.tracks) { e.tracks.mapTo(HashSet()) { it.id } }
     var draggingId by remember { mutableStateOf<Long?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val rowPx = with(LocalDensity.current) { RowHeight.toPx() }
@@ -188,7 +189,7 @@ fun PlaylistEditor(vm: MusicViewModel, onClose: () -> Unit) {
                     }
                 }
                 items(visibleAll, key = { "all${it.id}" }) { t ->
-                    val inList = e.tracks.any { it.id == t.id }
+                    val inList = t.id in inPlaylist
                     Row(
                         Modifier.fillMaxWidth().height(RowHeight)
                             .clickable { if (inList) vm.editorRemove(t) else vm.editorAdd(listOf(t)) }
