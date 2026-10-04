@@ -386,7 +386,7 @@ private fun VolumeRow(ctx: Context) {
 
 @Composable
 private fun QueueBody(ps: PlayerState, vm: MusicViewModel) {
-    val upcoming = ps.queue.drop(ps.index + 1)
+    val upcoming = androidx.compose.runtime.remember(ps.queue, ps.index) { ps.queue.drop(ps.index + 1) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             QueuePill(AmIcons.Mix, ps.autoMix) { vm.setAutoMix(!ps.autoMix) }

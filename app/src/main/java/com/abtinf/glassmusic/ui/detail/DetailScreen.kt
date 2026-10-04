@@ -90,13 +90,17 @@ fun DetailScreen(
 
     val folder = if (kind == "folder") library.folderById[id.toLongOrNull()] else null
 
-    val tracks: List<Track> = album?.tracks ?: artist?.tracks ?: folder?.tracks ?: playlist?.let { vm.resolve(it) } ?: emptyList()
+    val tracks: List<Track> = remember(album, artist, folder, playlist, library) {
+        album?.tracks ?: artist?.tracks ?: folder?.tracks ?: playlist?.let { vm.resolve(it) } ?: emptyList()
+    }
     val title = album?.title ?: artist?.name ?: folder?.name ?: playlist?.name ?: ""
     val subtitle = album?.artist ?: folder?.path?.trimEnd('/') ?: if (playlist != null) "Playlist" else if (artist != null) "Artist" else ""
-    val minutes = (tracks.sumOf { it.durationMs } / 60_000).toInt().coerceAtLeast(1)
-    val formats = tracks.map { it.format }.distinct()
-    val meta = "${tracks.size} downloaded  •  $minutes min" +
-        (tracks.firstOrNull { it.bitrateKbps > 0 }?.let { "  •  ${formats.singleOrNull() ?: "Mixed"} ${if (formats.size == 1) "${it.bitrateKbps}kbps" else ""}".trimEnd() } ?: "")
+    val meta = remember(tracks) {
+        val minutes = (tracks.sumOf { it.durationMs } / 60_000).toInt().coerceAtLeast(1)
+        val formats = tracks.map { it.format }.distinct()
+        "${tracks.size} downloaded  •  $minutes min" +
+            (tracks.firstOrNull { it.bitrateKbps > 0 }?.let { "  •  ${formats.singleOrNull() ?: "Mixed"} ${if (formats.size == 1) "${it.bitrateKbps}kbps" else ""}".trimEnd() } ?: "")
+    }
     val cover = tracks.firstOrNull()
 
     val backdrop = rememberLayerBackdrop()
@@ -132,31 +136,32 @@ fun DetailScreen(
                     }
                 }
             }
-            item {
-                Column(
+            // One lazy row per song: a folder or a big playlist can hold thousands of tracks.
+            itemsIndexed(tracks, key = { i, t -> "${t.id}#$i" }) { i, t ->
+                val top = if (i == 0) 12.dp else 0.dp
+                val bottom = if (i == tracks.lastIndex) 12.dp else 0.dp
+                Row(
                     Modifier.offset(y = (-36).dp).padding(horizontal = 16.dp).fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.12f)),
+                        .clip(RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom))
+                        .background(Color.White.copy(alpha = 0.12f))
+                        .clickable { vm.play(tracks, i) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    tracks.forEachIndexed { i, t ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { vm.play(tracks, i) }.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(Modifier.width(28.dp)) {
-                                if (player.current?.id == t.id) Equalizer(player.isPlaying, Color.White)
-                                else Text("${i + 1}", style = AmType.Body.copy(fontWeight = FontWeight.Normal), color = Color.White.copy(alpha = 0.75f))
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(t.title, style = AmType.Body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(t.artist, style = AmType.Caption.copy(fontSize = 15.sp), color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                            Box(Modifier.size(40.dp).clip(CircleShape).clickable { onOpenMetadata(t.id) }, contentAlignment = Alignment.Center) {
-                                Icon(AmIcons.Play, "Play", tint = Color.White, modifier = Modifier.size(22.dp))
-                            }
-                        }
+                    Box(Modifier.width(28.dp)) {
+                        if (player.current?.id == t.id) Equalizer(player.isPlaying, Color.White)
+                        else Text("${i + 1}", style = AmType.Body.copy(fontWeight = FontWeight.Normal), color = Color.White.copy(alpha = 0.75f))
                     }
-                    if (tracks.isEmpty()) Text("Nothing here yet.", style = AmType.Caption, color = Color.White.copy(alpha = 0.7f), modifier = Modifier.padding(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(t.title, style = AmType.Body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(t.artist, style = AmType.Caption.copy(fontSize = 15.sp), color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Box(Modifier.size(40.dp).clip(CircleShape).clickable { onOpenMetadata(t.id) }, contentAlignment = Alignment.Center) {
+                        Icon(AmIcons.Play, "Play", tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
                 }
+            }
+            if (tracks.isEmpty()) {
+                item { Text("Nothing here yet.", style = AmType.Caption, color = Color.White.copy(alpha = 0.7f), modifier = Modifier.padding(16.dp)) }
             }
             if (artist != null) {
                 val albums = library.albums.filter { it.tracks.first().artistId == artist.id }

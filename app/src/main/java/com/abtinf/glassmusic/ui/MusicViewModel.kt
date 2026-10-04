@@ -262,7 +262,10 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun editorRemove(track: Track) = mutateEditor { e -> e.copy(tracks = e.tracks.filter { it.id != track.id }) }
-    fun editorAdd(tracks: List<Track>) = mutateEditor { e -> e.copy(tracks = e.tracks + tracks.filter { t -> e.tracks.none { it.id == t.id } }) }
+    fun editorAdd(tracks: List<Track>) = mutateEditor { e ->
+        val have = e.tracks.mapTo(HashSet()) { it.id }
+        e.copy(tracks = e.tracks + tracks.filter { have.add(it.id) })
+    }
     fun editorRename(name: String) = mutateEditor { it.copy(name = name) }
 
     fun editorUndo() {
