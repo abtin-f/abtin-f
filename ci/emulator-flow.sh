@@ -65,6 +65,31 @@ adb shell input tap 540 2246; sleep 2.5; shot output
 back; sleep 1.5
 adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed
 
+# --- D: real songs + system media controls (notification / media keys) ---------------------------
+mkdir -p /tmp/music && python3 ci/make_audio.py /tmp/music
+adb shell mkdir -p /sdcard/Music/GlassTest
+for f in /tmp/music/*.wav; do
+  adb push "$f" /sdcard/Music/GlassTest/ > /dev/null
+  adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/Music/GlassTest/$(basename "$f")" > /dev/null
+done
+sleep 8
+adb shell content query --uri content://media/external/audio/media --projection _id:title:is_music:duration > out/mediastore.txt 2>&1
+adb logcat -c
+fresh
+shot real_home
+tap "Library"; tap "Songs"; shot real_songs
+tap "GlassTestA"; shot real_song_opened
+tap "Play" 0 4
+ms() { adb shell dumpsys media_session > "out/ms_$1.txt" 2>&1; grep -m1 -A3 "description=" "out/ms_$1.txt" > /dev/null; }
+adb shell input keyevent 3; sleep 4; shot real_home_screen_playing; ms 0_playing
+adb shell input keyevent 87; sleep 3; ms 1_after_next
+adb shell input keyevent 88; sleep 1; ms 2_after_prev_quick
+adb shell cmd statusbar expand-notifications; sleep 3; shot shade
+python3 ci/tap.py "Next track" | tee -a out/taps.txt; sleep 3; shot shade_after_next_tap; ms 3_after_shade_next
+python3 ci/tap.py "Next" | tee -a out/taps.txt; sleep 3; ms 4_after_shade_next2
+adb logcat -d | grep -iE "media3|MediaSession|PlayerController|glassmusic|AndroidRuntime" | tail -300 > out/media_log.txt
+adb shell cmd statusbar collapse
+
 adb logcat -d -b crash > out/crash.txt
 adb logcat -d -s AndroidRuntime:E ActivityManager:I > out/runtime.txt
 adb shell pidof $PKG > out/pid.txt || echo "NOT RUNNING" > out/pid.txt
