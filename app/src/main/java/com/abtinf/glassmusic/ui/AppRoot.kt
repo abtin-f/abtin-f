@@ -1,6 +1,7 @@
 package com.abtinf.glassmusic.ui
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -303,13 +304,15 @@ private fun BoxWithConstraintsScope.PlayerChrome(
         var progress = 0f
         val tracker = VelocityTracker()
         detectVerticalDragGestures(
-            onDragStart = { progress = expand.value; tracker.resetTracking() },
+            onDragStart = { progress = expand.value; tracker.resetTracking(); Log.d("GlassUI", "sheet drag start at ${expand.value}") },
             // A quick flick decides on its own (down closes, up opens); a slow drag settles on the nearer side.
             onDragEnd = {
                 val vy = tracker.calculateVelocity().y
-                settle(if (abs(vy) > 1_000f) vy < 0f else progress > threshold)
+                val open = if (abs(vy) > 1_000f) vy < 0f else progress > threshold
+                Log.d("GlassUI", "sheet drag end progress=$progress vy=$vy -> open=$open")
+                settle(open)
             },
-            onDragCancel = { settle(progress > threshold) },
+            onDragCancel = { Log.d("GlassUI", "sheet drag cancelled at $progress"); settle(progress > threshold) },
         ) { change, dy ->
             tracker.addPointerInputChange(change)
             change.consume()

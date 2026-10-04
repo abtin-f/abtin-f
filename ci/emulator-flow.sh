@@ -67,6 +67,10 @@ back; sleep 1.5; shot output_closed_by_back
 back; sleep 2; shot player_collapsed_by_back
 adb shell input tap 400 2040; sleep 3
 adb shell input swipe 540 160 540 1800 300; sleep 2; shot player_collapsed_by_swipe
+# the same drag code, other gestures: a slower swipe down from the middle of the handle, then the mini-player dragged up
+adb shell input swipe 540 178 540 1500 700; sleep 2.5; shot collapsed_by_slow_swipe
+adb shell input swipe 540 2040 540 700 500; sleep 2.5; shot opened_by_swipe_up
+adb logcat -d -s GlassUI:D > out/drag_log.txt
 
 # --- D: real songs + system media controls (notification / media keys) ---------------------------
 mkdir -p /tmp/music && python3 ci/make_audio.py /tmp/music
@@ -108,7 +112,7 @@ adb shell input tap 104 903; sleep 2; ms 8_shade_prev
 adb shell input tap 974 903; sleep 2; ms 9_shade_next_again
 shot shade_after_taps
 adb shell cmd statusbar collapse; sleep 1
-adb logcat -d -s GlassSession:I GlassPlayer:I > out/media_log.txt
+adb logcat -d -s GlassSession:I GlassPlayer:I GlassUI:D > out/media_log.txt
 adb logcat -d | grep "Sending KeyEvent" | cut -c1-200 >> out/media_log.txt
 
 # --- E: embedded cover art, embedded lyrics, synced sidecar lyrics, folders ---------------------------
