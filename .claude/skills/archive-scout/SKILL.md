@@ -13,7 +13,7 @@ It merges two toolkits and adds the vetting workflow the channel needs.
 | web-media-getter | `scripts/webmedia.py` | Wikimedia Commons, Openverse, Internet Archive, Library of Congress, NASA (no key); Pexels, Pixabay (free key); GIPHY/KLIPY for `--type gif` | Factual, historical, scientific, CC-licensed material. **First choice for documentary work.** |
 | stock-media | `scripts/stock_media.py` | Pexels, Pixabay, Coverr | Modern stock photos, illustrations, vectors, video loops; has `--min-width`, orientation, `CREDITS.md`, caching. |
 
-Both are stdlib-only Python 3. Run them from this skill's directory.
+Both are stdlib-only Python 3. Run them from this skill's directory (in Claude chat the skill is mounted in the code sandbox - `cd` into the folder that contains this SKILL.md, or call the scripts by their full path).
 Keys: `PEXELS_API_KEY`, `PIXABAY_API_KEY`, `COVERR_API_KEY` (env var, or `stock_media.py setup`).
 Run `python3 scripts/stock_media.py keys` to see what is configured. Sources that need a key and have none are skipped, not faked.
 
@@ -24,7 +24,20 @@ Run `python3 scripts/stock_media.py keys` to see what is configured. Sources tha
 3. **Tool-reported license is a lead, not a verdict.** `license` from an API (e.g. "CC BY-SA 4.0", "Pexels (free)") must be confirmed on `page_url`. Many items have per-file terms, third-party rights (logos, people, trademarks), or non-commercial/no-derivatives clauses that matter for monetized YouTube. Flag `NC`/`ND`/`see item`/`unknown` as **not cleared**.
 4. **Real vs. illustration vs. AI-generated must be labeled separately.** No API here reports "AI-generated" reliably. Classify from the page (description, tags, uploader notes, category). If you cannot tell, label `unverified` - never assume "real photo". Pixabay/Openverse/stock sites can contain AI images and renders.
 5. **Resolution honesty.** See "Resolution traps" below. Report original pixel dimensions only when the API gave them or you measured them after an approved download. 16:9 at 1920x1080 is the floor for full-frame use; for zoom/crop moves prefer >= 3000 px on the long side, and say when an asset is only suitable as an inset.
-6. **Don't claim you looked at an image you didn't.** You can judge sharpness/composition only if you actually viewed the preview (e.g. downloaded the thumbnail to the scratchpad and opened it with Read). Otherwise say "preview not inspected" and judge on metadata only.
+6. **Don't claim you looked at an image you didn't.** You can judge sharpness/composition only if you actually viewed the preview (e.g. downloaded the thumbnail to a temp folder and opened it with your file/image viewer). Otherwise say "preview not inspected" and judge on metadata only.
+
+## Running in Claude chat (claude.ai) vs Claude Code
+
+This skill works in both. In chat, **Code execution and file creation** must be enabled, and the scripts need outbound HTTPS.
+
+- **If the sandbox has network access**, everything above works as written.
+- **If the scripts fail with `403`/`Tunnel connection failed`/timeouts** (common when network access is restricted), do not give up and do not invent results. Either ask the user to allow these domains in their Claude settings - `commons.wikimedia.org`, `api.openverse.org`, `archive.org`, `www.loc.gov`, `images-api.nasa.gov`, `api.pexels.com`, `pixabay.com`, `api.coverr.co` - or use the **fallback**: search with the web search tool and read each item's page with the web fetch tool. Same rules apply: only report what the pages actually say.
+- Fallback for Wikimedia Commons (no key, returns license and size per file):
+  `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=<terms>&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|size|mediatype|extmetadata&iiurlwidth=800&format=json`
+  (`imageinfo[0].url` = original file, `.width/.height` = original size, `extmetadata.LicenseShortName` / `.Artist` = license and credit.)
+- **API keys in chat:** Pexels/Pixabay/Coverr keys are optional. If the user pastes one, run `python3 scripts/stock_media.py setup --pexels <key>`; it lives only in that sandbox session. No key means those sources are skipped and the no-key sources still work.
+- **Showing results:** chat can render previews only if you save the thumbnail to a file and view it, or link the preview URL. Otherwise give the source page link plus metadata and say "preview not inspected".
+- **Delivering downloads:** save approved files plus `CREDITS.md` into the outputs folder and zip them so the user can download them.
 
 ## Workflow
 
@@ -43,10 +56,10 @@ python3 scripts/webmedia.py "cable laying ship" --type video --source nasa,inter
 Tips: try 2-3 phrasings per category ("submarine cable", "undersea cable", "fiber optic cable ship", "cable landing station", "telegraph cable"); two-word queries beat long ones. A source erroring or returning nothing is normal - record it in the report rather than hiding it.
 
 ### 3. Fetch previews and inspect
-Download **thumbnails only** (the `thumb` / `preview_url` field) into the scratchpad and open them with Read to judge sharpness, subject, and 16:9 fit. Do not download full files yet. Discard watermarked, low-res, text-heavy or off-topic hits.
+Download **thumbnails only** (the `thumb` / `preview_url` field) into a temp folder and view them to judge sharpness, subject, and 16:9 fit. Do not download full files yet. Discard watermarked, low-res, text-heavy or off-topic hits.
 
 ### 4. Check the source page and terms
-For each shortlisted item, open `page_url` (WebFetch) and confirm: license name and version, author, any "requires attribution/share-alike" text, restrictions (people, logos, trademarks, "editorial use only"), and whether it is a photograph, drawing, diagram, map or render. See `references/source-guide.md` for source-specific traps.
+For each shortlisted item, open `page_url` (web fetch / browse tool) and confirm: license name and version, author, any "requires attribution/share-alike" text, restrictions (people, logos, trademarks, "editorial use only"), and whether it is a photograph, drawing, diagram, map or render. See `references/source-guide.md` for source-specific traps.
 
 ### 5. Report (before any download)
 Use the template in `references/report-template.md`. Each asset needs all five items the channel asks for:
