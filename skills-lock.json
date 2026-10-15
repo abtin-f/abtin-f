@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "web-media-getter": {
+      "source": "connerkward/web-media-getter-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "a56e181f30124d3f714da80f9818e46296e707ec333e1b79b21d48a266bb44bd"
+    }
+  }
+}
